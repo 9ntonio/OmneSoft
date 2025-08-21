@@ -1,0 +1,53 @@
+{
+  "Files": [
+    {
+      "Id": "/Users/9ntonio/Work/OmneSoft/bin/Debug/net8.0/wwwroot/_framework/blazor.webassembly.js",
+      "PackagePath": "staticwebassets/_framework/blazor.webassembly.js"
+    },
+    {
+      "Id": "/Users/9ntonio/Work/OmneSoft/obj/Debug/net8.0/compressed/bjf1vxvrzm.gz",
+      "PackagePath": "staticwebassets/_framework/blazor.webassembly.js.gz"
+    },
+    {
+      "Id": "/Users/9ntonio/Work/OmneSoft/wwwroot/appsettings.json",
+      "PackagePath": "staticwebassets/appsettings.json"
+    },
+    {
+      "Id": "/Users/9ntonio/Work/OmneSoft/wwwroot/css/app.css",
+      "PackagePath": "staticwebassets/css/app.css"
+    },
+    {
+      "Id": "/Users/9ntonio/Work/OmneSoft/wwwroot/favicon.png",
+      "PackagePath": "staticwebassets/favicon.png"
+    },
+    {
+      "Id": "/Users/9ntonio/Work/OmneSoft/wwwroot/index.html",
+      "PackagePath": "staticwebassets/index.html"
+    },
+    {
+      "Id": "/Users/9ntonio/Work/OmneSoft/wwwroot/js/app.js",
+      "PackagePath": "staticwebassets/js/app.js"
+    },
+    {
+      "Id": "/Users/9ntonio/Work/OmneSoft/wwwroot/js/interop.js",
+      "PackagePath": "staticwebassets/js/interop.js"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.OmneSoft.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.build.OmneSoft.props",
+      "PackagePath": "build\\OmneSoft.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildMultiTargeting.OmneSoft.props",
+      "PackagePath": "buildMultiTargeting\\OmneSoft.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildTransitive.OmneSoft.props",
+      "PackagePath": "buildTransitive\\OmneSoft.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

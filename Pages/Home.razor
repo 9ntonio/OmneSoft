@@ -1,0 +1,90 @@
+@page "/"
+@inject IJSRuntime JSRuntime
+@inject IAppStateService AppState
+@namespace OmneSoft.Pages
+
+<PageTitle>Home - OmneSoft</PageTitle>
+
+<div class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-[calc(100vh-200px)] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+        <div class="text-center mb-8">
+            <h2 class="text-4xl font-bold text-gray-800 mb-2">Counter Demo</h2>
+            <p class="text-gray-600">Blazor WebAssembly with Modern Components</p>
+        </div>
+        
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-24 h-24 bg-indigo-100 rounded-full mb-4">
+                <span class="text-3xl font-bold text-indigo-600">@currentCount</span>
+            </div>
+            <p class="text-lg text-gray-700">Current count: <span class="font-semibold text-indigo-600">@currentCount</span></p>
+        </div>
+        
+        <div class="space-y-4">
+            <Button OnClick="IncrementCount" 
+                    Variant="Button.ButtonVariant.Primary" 
+                    class="w-full">
+                Click to Increment
+            </Button>
+            
+            <Button OnClick="ResetCount" 
+                    Variant="Button.ButtonVariant.Secondary" 
+                    class="w-full">
+                Reset Counter
+            </Button>
+            
+            <Button OnClick="ShowAlert" 
+                    Variant="Button.ButtonVariant.Success" 
+                    IsLoading="@isJSInteropLoading"
+                    class="w-full">
+                Test JSInterop
+            </Button>
+        </div>
+        
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-500">✅ Blazor WebAssembly + .NET 8</p>
+            <p class="text-xs text-gray-400 mt-2">@lastAction</p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int currentCount = 0;
+    private string lastAction = "Ready";
+    private bool isJSInteropLoading = false;
+
+    protected override void OnInitialized()
+    {
+        lastAction = $"Initialized at {DateTime.Now:HH:mm:ss}";
+    }
+
+    private void IncrementCount()
+    {
+        currentCount++;
+        lastAction = $"Incremented to {currentCount} at {DateTime.Now:HH:mm:ss}";
+    }
+    
+    private void ResetCount()
+    {
+        currentCount = 0;
+        lastAction = $"Reset to 0 at {DateTime.Now:HH:mm:ss}";
+    }
+
+    private async Task ShowAlert()
+    {
+        isJSInteropLoading = true;
+        AppState.SetLoading(true);
+        
+        try
+        {
+            // Simulate some async work
+            await Task.Delay(500);
+            await JSRuntime.InvokeVoidAsync("alert", $"Current count is: {currentCount}");
+            lastAction = $"JSInterop called at {DateTime.Now:HH:mm:ss}";
+        }
+        finally
+        {
+            isJSInteropLoading = false;
+            AppState.SetLoading(false);
+        }
+    }
+}

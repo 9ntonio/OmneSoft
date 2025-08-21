@@ -1,0 +1,58 @@
+@inherits LayoutComponentBase
+@namespace OmneSoft
+@inject IAppStateService AppState
+@implements IDisposable
+
+<div class="page min-h-screen bg-gray-50">
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-semibold text-gray-900">OmneSoft</h1>
+                </div>
+                <nav class="flex space-x-4">
+                    <NavLink href="/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                        Home
+                    </NavLink>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1">
+        <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            @Body
+        </div>
+    </main>
+
+    <footer class="bg-white border-t mt-auto">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-sm text-gray-500">
+                © @DateTime.Now.Year OmneSoft. Built with Blazor WebAssembly & .NET 8
+            </p>
+        </div>
+    </footer>
+</div>
+
+@if (AppState.IsLoading)
+{
+    <LoadingSpinner />
+}
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        AppState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        AppState.OnChange -= StateHasChanged;
+    }
+}
