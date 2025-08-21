@@ -16,6 +16,6 @@ window.blazorFunctions = {
   },
 
   logToConsole: function (message) {
-    console.log("From Blazor:", message);
+    console.log('From Blazor:', message);
   },
 };

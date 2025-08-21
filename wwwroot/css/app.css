@@ -35,8 +35,8 @@
 
   .loading-progress circle:last-child {
     @apply stroke-blue-500 transition-all duration-75 ease-in-out;
-    stroke-dasharray: calc(var(--blazor-load-percentage, 0%) * 3.141 * 0.8),
-      500%;
+    stroke-dasharray:
+      calc(var(--blazor-load-percentage, 0%) * 3.141 * 0.8), 500%;
   }
 
   .loading-progress-text {
