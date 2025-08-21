@@ -5,7 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build-css": "tailwindcss -i ./OmneSoft/wwwroot/app.css -o ./OmneSoft/wwwroot/app.min.css --watch"
+    "build-css": "tailwindcss -i ./wwwroot/css/app.css -o ./wwwroot/css/app.min.css --watch",
+    "build-css-prod": "tailwindcss -i ./wwwroot/css/app.css -o ./wwwroot/css/app.min.css --minify",
+    "dev": "npm run build-css-prod && dotnet run",
+    "start": "npm run build-css-prod && dotnet run",
+    "build": "npm run build-css-prod && dotnet build",
+    "publish": "npm run build-css-prod && dotnet publish"
   },
   "repository": {
     "type": "git",

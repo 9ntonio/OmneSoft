@@ -17,4 +17,9 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
   </ItemGroup>
 
+  <!-- Automatically build Tailwind CSS before build/run -->
+  <Target Name="BuildTailwindCSS" BeforeTargets="Build">
+    <Exec Command="npm run build-css-prod" ContinueOnError="false" />
+  </Target>
+
 </Project>

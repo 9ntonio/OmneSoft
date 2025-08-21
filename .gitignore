@@ -138,5 +138,26 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-.vscode
 .kilo
+
+# .NET build artifacts
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.cache
+*.tmp
+
+# Visual Studio / Visual Studio Code
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
