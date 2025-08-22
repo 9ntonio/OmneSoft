@@ -1,23 +1,43 @@
 @inherits LayoutComponentBase
 @namespace OmneSoft
 @inject IAppStateService AppState
+@inject NavigationManager Navigation
 @implements IDisposable
 
-<div class="page min-h-screen bg-gray-50">
-    <main class="flex-1">
-        <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+@if (IsFullViewportPage())
+{
+    <div class="page min-h-screen bg-gray-50 flex flex-col">
+        <main class="flex-1 flex flex-col">
             @Body
-        </div>
-    </main>
+        </main>
 
-    <footer class="bg-white border-t mt-auto">
-        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-            <p class="text-center text-sm text-gray-500">
-                © @DateTime.Now.Year OmneSoft. Built with Blazor WebAssembly & .NET 8
-            </p>
-        </div>
-    </footer>
-</div>
+        <footer class="bg-white border-t">
+            <div class="px-8 py-4">
+                <p class="text-center text-sm text-gray-500">
+                    Built with <span class="font-semibold">Blazor WebAssembly</span>, <span class="font-semibold">.NET 8</span>, <span class="font-semibold">AG Grid</span>, and <span class="font-semibold">Tailwind CSS</span>
+                </p>
+            </div>
+        </footer>
+    </div>
+}
+else
+{
+    <div class="page min-h-screen bg-gray-50">
+        <main class="flex-1">
+            <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                @Body
+            </div>
+        </main>
+
+        <footer class="bg-white border-t mt-auto">
+            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                <p class="text-center text-sm text-gray-500">
+                    © @DateTime.Now.Year OmneSoft. Built with Blazor WebAssembly & .NET 8
+                </p>
+            </div>
+        </footer>
+    </div>
+}
 
 @if (AppState.IsLoading)
 {
@@ -34,6 +54,12 @@
     protected override void OnInitialized()
     {
         AppState.OnChange += StateHasChanged;
+    }
+
+    private bool IsFullViewportPage()
+    {
+        var uri = Navigation.ToBaseRelativePath(Navigation.Uri);
+        return uri == "" || uri == "/"; // Home page should use full viewport
     }
 
     public void Dispose()

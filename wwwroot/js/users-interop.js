@@ -39,27 +39,27 @@ window.usersInterop = {
         gridOptions.rowData = [];
       }
 
-      // Create the grid using the modern API
+      // Set default grid options for v33
+      gridOptions.defaultColDef = {
+        resizable: true,
+        sortable: true,
+        filter: true,
+        ...gridOptions.defaultColDef,
+      };
+
+      // Create the grid using v33 API - correct method
       const gridApi = agGrid.createGrid(container, gridOptions);
       this.grids.set(containerId, gridApi);
 
-      // Wait for grid to be fully rendered to avoid ARIA issues
+      // Wait for grid to be ready
       setTimeout(() => {
-        if (
-          gridApi &&
-          gridApi.getDisplayedRowCount() === 0 &&
-          gridOptions.rowData.length === 0
-        ) {
-          // If no data, ensure proper ARIA structure
-          const gridElement = container.querySelector('[role="grid"]');
-          if (gridElement && !gridElement.querySelector('[role="row"]')) {
-            // Add a placeholder row to satisfy ARIA requirements
-            gridApi.setGridOption('rowData', []);
-          }
+        if (gridApi) {
+          console.log(
+            `AG Grid created successfully for container: ${containerId}`
+          );
         }
       }, 100);
 
-      console.log(`AG Grid created successfully for container: ${containerId}`);
       return true;
     } catch (err) {
       console.error('Error creating AG Grid:', err);
@@ -129,11 +129,12 @@ window.usersInterop = {
     }
   },
 
-  // Auto-size all columns
+  // Auto-size all columns using v33 API
   autoSizeAllColumns: function (containerId) {
     try {
       const gridApi = this.grids.get(containerId);
       if (gridApi) {
+        // In v33, columnApi is deprecated - use gridApi directly
         const allColumnIds = [];
         gridApi.getColumns().forEach(column => {
           allColumnIds.push(column.getId());
@@ -144,6 +145,21 @@ window.usersInterop = {
       return false;
     } catch (err) {
       console.error('Error auto-sizing columns:', err);
+      return false;
+    }
+  },
+
+  // Refresh the grid
+  refreshGrid: function (containerId) {
+    try {
+      const gridApi = this.grids.get(containerId);
+      if (gridApi) {
+        gridApi.refreshCells();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error refreshing grid:', err);
       return false;
     }
   },

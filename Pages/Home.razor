@@ -5,125 +5,73 @@
 
 <PageTitle>Users - OmneSoft</PageTitle>
 
-<div class="container mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-6" tabindex="-1">Users Management</h1>
+<header class="bg-white shadow-sm border-b">
+    <div class="px-8 py-4">
+        <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-gray-900">Users Management</h1>
+            <div class="flex items-center space-x-4">
+                <button @onclick="RefreshData"
+                        disabled="@isRefreshing"
+                        class="@GetRefreshButtonClass() font-medium py-2 px-4 rounded-lg transition-colors">
+                    @if (isRefreshing)
+                    {
+                        <span class="inline-flex items-center">
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Reloading...
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="inline-flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Reload Data
+                        </span>
+                    }
+                </button>
 
-    <div class="mb-4 space-x-2 flex flex-wrap items-center gap-2">
-        <button @ref="refreshButton"
-                @onclick="RefreshData"
-                disabled="@isRefreshing"
-                class="@GetRefreshButtonClass() font-bold py-2 px-4 rounded transition-colors">
-            @if (isRefreshing)
-            {
-                <span class="inline-flex items-center">
-                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Refreshing...
-                </span>
-            }
-            else
-            {
-                <span class="inline-flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    Refresh Users Data
-                </span>
-            }
-        </button>
-
-        <button @onclick="GetSelectedUsers"
-                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors">
-            <span class="inline-flex items-center">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                Get Selected Users
-            </span>
-        </button>
-
-        <div class="flex items-center space-x-2 ml-4">
-            <label class="flex items-center cursor-pointer">
-                <input type="checkbox" @bind="simulateErrors" class="sr-only">
-                <div class="relative">
-                    <div class="@(simulateErrors ? "bg-blue-600" : "bg-gray-300") w-10 h-6 rounded-full shadow-inner transition-colors"></div>
-                    <div class="@(simulateErrors ? "translate-x-4" : "translate-x-0") absolute w-4 h-4 bg-white rounded-full shadow inset-y-1 left-1 transition-transform"></div>
+                <div class="flex items-center space-x-2">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" @bind="simulateErrors" class="sr-only">
+                        <div class="relative">
+                            <div class="@(simulateErrors ? "bg-blue-600" : "bg-gray-300") w-10 h-6 rounded-full shadow-inner transition-colors"></div>
+                            <div class="@(simulateErrors ? "translate-x-4" : "translate-x-0") absolute w-4 h-4 bg-white rounded-full shadow inset-y-1 left-1 transition-transform"></div>
+                        </div>
+                        <span class="ml-2 text-sm font-medium text-gray-700">
+                            Simulate Errors (50% chance)
+                        </span>
+                    </label>
                 </div>
-                <span class="ml-2 text-sm font-medium text-gray-700">
-                    Simulate Errors (50% chance)
-                </span>
-            </label>
-        </div>
-    </div>
-
-    @if (!string.IsNullOrEmpty(statusMessage))
-    {
-        <div class="mb-4 p-4 @GetStatusMessageClass() border rounded transition-all duration-300">
-            <div class="flex items-center">
-                @if (statusMessage.Contains("✅"))
-                {
-                    <svg class="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                }
-                else if (statusMessage.Contains("🔄"))
-                {
-                    <svg class="animate-spin w-5 h-5 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                }
-                <strong>@statusMessage</strong>
             </div>
         </div>
-    }
+    </div>
+</header>
 
-    @if (!string.IsNullOrEmpty(selectedRowInfo))
-    {
-        <div class="mb-4 p-4 bg-blue-100 border border-blue-300 rounded">
-            <strong>Selected Row:</strong> @selectedRowInfo
-        </div>
-    }
-
-    <UsersGrid @ref="usersGrid"
-               ContainerId="users-grid"
-               Height="500px"
-               Width="100%"
-               EnableSelection="true"
-               SelectionMode="single"
-               OnRowClicked="OnRowClicked"
-               OnSelectionChanged="OnSelectionChanged"
-               DataUrl="data/users.json"
-               SimulateErrors="@simulateErrors" />
+<div class="flex-1 p-8">
+    <div class="h-full">
+        <UsersGrid @ref="usersGrid"
+                   ContainerId="users-grid"
+                   EnableSelection="true"
+                   SelectionMode="single"
+                   OnRowClicked="OnRowClicked"
+                   OnSelectionChanged="OnSelectionChanged"
+                   DataUrl="data/users.json"
+                   SimulateErrors="@simulateErrors" />
+    </div>
 </div>
 
 @code {
     private UsersGrid? usersGrid;
-    private ElementReference refreshButton;
-    private string selectedRowInfo = string.Empty;
-    private string statusMessage = string.Empty;
+    private bool simulateErrors = false;
     private bool isRefreshing = false;
-    private bool simulateErrors = true;
-
-    protected override void OnInitialized()
-    {
-        statusMessage = "Users data will be automatically loaded from the server";
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await refreshButton.FocusAsync();
-        }
-    }
 
     private async Task RefreshData()
     {
         isRefreshing = true;
-        statusMessage = "🔄 Refreshing users data from server...";
         StateHasChanged();
 
         try
@@ -131,12 +79,11 @@
             if (usersGrid != null)
             {
                 await usersGrid.RefreshData();
-                statusMessage = "✅ Users data refreshed successfully!";
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            statusMessage = $"❌ Error refreshing data: {ex.Message}";
+            // Error handling is done within the UsersGrid component
         }
         finally
         {
@@ -145,48 +92,14 @@
         }
     }
 
-    private async Task GetSelectedUsers()
-    {
-        try
-        {
-            if (usersGrid != null)
-            {
-                var selectedRows = await usersGrid.GetSelectedRows();
-                if (selectedRows.Length > 0)
-                {
-                    statusMessage = $"✅ Retrieved {selectedRows.Length} selected user(s)";
-                }
-                else
-                {
-                    statusMessage = "ℹ️ No users are currently selected";
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            statusMessage = $"❌ Error getting selected users: {ex.Message}";
-        }
-    }
-
     private void OnRowClicked(object rowData)
     {
-        var json = System.Text.Json.JsonSerializer.Serialize(rowData);
-        selectedRowInfo = $"Row clicked: {json}";
-        StateHasChanged();
+        // Handle row click if needed
     }
 
     private void OnSelectionChanged(object[] selectedRows)
     {
-        if (selectedRows.Length > 0)
-        {
-            var json = System.Text.Json.JsonSerializer.Serialize(selectedRows[0]);
-            selectedRowInfo = $"Row selected: {json}";
-        }
-        else
-        {
-            selectedRowInfo = "No rows selected";
-        }
-        StateHasChanged();
+        // Handle selection change if needed
     }
 
     private string GetRefreshButtonClass()
@@ -194,17 +107,5 @@
         return isRefreshing
             ? "bg-blue-400 cursor-not-allowed text-white"
             : "bg-blue-500 hover:bg-blue-700 text-white";
-    }
-
-    private string GetStatusMessageClass()
-    {
-        if (statusMessage.Contains("✅"))
-            return "bg-green-100 border-green-300 text-green-800";
-        else if (statusMessage.Contains("❌"))
-            return "bg-red-100 border-red-300 text-red-800";
-        else if (statusMessage.Contains("🔄"))
-            return "bg-blue-100 border-blue-300 text-blue-800";
-        else
-            return "bg-gray-100 border-gray-300 text-gray-800";
     }
 }
