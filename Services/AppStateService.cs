@@ -12,15 +12,14 @@ public class AppStateService : IAppStateService
     /// Components subscribe to this to trigger re-renders when state updates.
     /// </summary>
     public event Action? OnChange;
-    
+
     private bool _isLoading;
-    
     /// <summary>
     /// Indicates whether the application is currently performing a loading operation.
     /// Read-only property that components can bind to for showing loading indicators.
     /// </summary>
-    public bool IsLoading 
-    { 
+    public bool IsLoading
+    {
         get => _isLoading;
         private set
         {
@@ -44,6 +43,8 @@ public class AppStateService : IAppStateService
     {
         IsLoading = isLoading;
     }
+
+
 
     /// <summary>
     /// Manually triggers state change notifications to all subscribers.

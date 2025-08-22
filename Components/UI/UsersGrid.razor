@@ -87,7 +87,8 @@ else
         new {
             field = "roles",
             headerName = "Roles",
-            width = 200
+            width = 200,
+            valueFormatter = "params.value ? params.value.join(', ') : ''"
         },
         new {
             field = "license",
@@ -102,7 +103,8 @@ else
         new {
             field = "lastActive",
             headerName = "Last Active",
-            width = 150
+            width = 150,
+            valueFormatter = "params.value ? new Date(params.value).toLocaleDateString() + ' ' + new Date(params.value).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''"
         },
         new {
             field = "invitedBy",
@@ -195,7 +197,7 @@ else
 
     private async Task LoadUsers()
     {
-        isLoading = true;           // Component-specific loading state
+        isLoading = true;           // Component-specific loading state (shows component loader)
         AppState.SetLoading(true);  // Global loading state for coordination
         errorState = null;
         StateHasChanged();

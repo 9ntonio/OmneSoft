@@ -13,9 +13,9 @@ A modern Blazor WebAssembly application built with .NET 8, featuring comprehensi
 - **Production-Ready Error Handling**: Comprehensive HTTP error scenarios with user-friendly messages and retry mechanisms
 - **Network Resilience**: Handles connection failures, timeouts, and various server error conditions
 - **Error Simulation Testing**: Comprehensive error simulation system cycling through 5 error types with lifecycle-aware parameter change detection, automatic grid data refresh, and clean state transitions
-- **Modern UI Components**: Custom Button and UsersGrid components with Tailwind CSS styling
-- **Enhanced Loading States & User Feedback**: Animated indicators, contextual messages, full-height loading states, and streamlined state management for all async operations
-- **Centralized State Management**: AppStateService with reactive patterns for global application state
+- **Modern UI Components**: Custom Button and UsersGrid components with Tailwind CSS styling and consistent design patterns
+- **Intelligent Loading States & User Feedback**: Animated indicators, contextual messages, full-height loading states, smart global loader suppression, and comprehensive triple-layer state management for all async operations across components and pages
+- **Intelligent State Management**: Enhanced AppStateService with reactive patterns, component loading awareness, smart global loader suppression, and unified loading coordination across all application components
 - **Service Integration**: Dependency injection with scoped services for HttpClient and state management
 - **JavaScript Interop**: Robust JavaScript interoperability with AG Grid v33.3.2 using the correct createGrid API method with backward compatible selection modes, deprecated option removal, and comprehensive grid validation for optimal compatibility
 - **Enhanced Accessibility Features**: WCAG-compliant components with proper focus management, semantic HTML, ARIA attributes, improved row identification for screen readers, and v33-compatible grid configuration
@@ -26,7 +26,8 @@ A modern Blazor WebAssembly application built with .NET 8, featuring comprehensi
 ## Tech Stack
 
 - **Frontend**: Blazor WebAssembly (.NET 8.0.8 LTS)
-- **State Management**: Custom AppStateService with reactive patterns
+- **Component Architecture**: Streamlined UI component structure with focused namespaces for optimal organization
+- **State Management**: Enhanced AppStateService with reactive patterns, component loading awareness, intelligent loader suppression, and comprehensive triple-layer loading coordination
 - **Dependency Injection**: Built-in .NET DI container with scoped services
 - **Styling**: Tailwind CSS v3.4.17 with PostCSS processing and autoprefixer
 - **Data Grid**: AG Grid Community Edition v33.3.2 (CDN-hosted) with Quartz theme, fixed-height strategy for reliability, and stable configuration using correct createGrid API
@@ -169,8 +170,10 @@ The application uses a **system font-first approach** (`font-sans` in Tailwind C
 The application implements a **hybrid state management pattern** combining centralized global state with component-specific state management using a custom `AppStateService` that provides:
 
 - **Reactive State Updates**: Components subscribe to state changes via event notifications
-- **Hybrid Loading Management**: Components maintain local loading states while coordinating with global state
+- **Intelligent Loading Management**: Dual-layer loading state system with global and component-level coordination
 - **Global Loading States**: Centralized loading indicators for cross-component coordination
+- **Component Loading Awareness**: Tracks when components show their own loading UI to prevent duplicate indicators
+- **Smart Loader Suppression**: Automatically hides global loader when components handle their own loading states
 - **Component-Specific States**: Local state management for component-specific UI behaviors
 - **Service Integration**: Seamless integration with dependency injection container
 - **Performance Optimization**: Only notifies subscribers when state actually changes
@@ -185,9 +188,43 @@ The application implements a **hybrid state management pattern** combining centr
 builder.Services.AddScoped<IAppStateService, AppStateService>();
 ```
 
-#### Hybrid State Management Pattern
+#### AppStateService API
 
-Components integrate with the AppStateService using a hybrid approach that combines global state coordination with local state management:
+The enhanced AppStateService provides the following properties and methods for intelligent loading state management:
+
+**Properties:**
+
+- `bool IsLoading` - Indicates if any global loading operation is active
+- `bool HasComponentLoading` - Tracks if components are showing their own loading UI
+- `bool ShowGlobalLoader` - Computed property that returns `true` only when there's global loading but no component-level loading
+- `event Action? OnChange` - Event fired when any state property changes
+
+**Methods:**
+
+- `SetLoading(bool isLoading)` - Sets the global loading state for cross-component coordination
+- `SetComponentLoading(bool hasComponentLoading)` - Controls component loading awareness to suppress global loader
+- `NotifyStateChanged()` - Manually triggers state change notifications to all subscribers
+
+**Usage Pattern:**
+
+```csharp
+// Component with its own loading UI
+AppState.SetLoading(true);           // Coordinate with other components
+AppState.SetComponentLoading(true);  // Suppress global loader
+// ... async operations ...
+AppState.SetLoading(false);          // Clear global state
+AppState.SetComponentLoading(false); // Re-enable global loader
+
+// Global loader in layout
+@if (AppState.ShowGlobalLoader)
+{
+    <!-- Only shows when no components are handling their own loading -->
+}
+```
+
+#### Intelligent Loading State Management Pattern
+
+Components integrate with the AppStateService using an intelligent dual-layer approach that prevents duplicate loading indicators while maintaining proper state coordination:
 
 ```csharp
 @using OmneSoft.Services
@@ -205,9 +242,10 @@ Components integrate with the AppStateService using a hybrid approach that combi
 
     private async Task LoadData()
     {
-        // Set both local and global loading states
-        isLoading = true;           // For component-specific UI (buttons, opacity)
-        AppState.SetLoading(true);  // For global coordination (other components)
+        // Set component loading state and suppress global loader
+        isLoading = true;                    // For component-specific UI (buttons, opacity)
+        AppState.SetLoading(true);           // For global coordination (other components)
+        AppState.SetComponentLoading(true);  // Suppress global loader to prevent duplicates
 
         try
         {
@@ -215,9 +253,10 @@ Components integrate with the AppStateService using a hybrid approach that combi
         }
         finally
         {
-            // Clear both loading states
-            isLoading = false;          // Component UI returns to normal
-            AppState.SetLoading(false); // Global state cleared
+            // Clear all loading states
+            isLoading = false;                    // Component UI returns to normal
+            AppState.SetLoading(false);           // Global state cleared
+            AppState.SetComponentLoading(false);  // Re-enable global loader for other operations
         }
     }
 
@@ -253,9 +292,42 @@ The `UsersGrid` component provides flexible configuration options for optimal in
 - **Event Callbacks**: Row click and selection change events for interactive functionality
 - **AG Grid Quartz Theme**: Uses the modern Quartz theme for professional appearance
 
-### UsersGrid Integration Example
+## Project Structure
 
-The `UsersGrid` component demonstrates AppStateService integration with optimized loading state management and enhanced refresh functionality:
+The application follows a clean, organized structure with focused component namespaces:
+
+```
+OmneSoft/
+├── Components/
+│   └── UI/                    # Reusable UI components
+│       ├── Button.razor       # Custom button component with variants
+│       └── UsersGrid.razor    # Advanced data grid component
+├── Pages/
+│   └── Home.razor            # Main users management page
+├── Services/
+│   ├── IAppStateService.cs   # State management interface
+│   └── AppStateService.cs    # Reactive state management implementation
+├── Models/
+│   └── AppSettings.cs        # Application configuration models
+├── wwwroot/
+│   ├── css/
+│   │   ├── app.css          # Tailwind CSS with AG Grid customizations
+│   │   └── app.min.css      # Production minified CSS
+│   ├── js/
+│   │   ├── app.js           # Main application JavaScript
+│   │   ├── interop.js       # General JavaScript interop functions
+│   │   └── users-interop.js # AG Grid specific interop functions
+│   └── data/
+│       └── users.json       # Sample user data
+├── _Imports.razor            # Global namespace imports (UI components only)
+├── MainLayout.razor          # Application layout component
+├── App.razor                # Root application component
+└── Program.cs               # Application entry point and DI configuration
+```
+
+### Component Integration Examples
+
+Both the `UsersGrid` component and `Home` page demonstrate comprehensive AppStateService integration with optimized loading state management and enhanced refresh functionality:
 
 ```csharp
 @inject IAppStateService AppState
@@ -281,8 +353,8 @@ The `UsersGrid` component demonstrates AppStateService integration with optimize
 
     private async Task LoadUsers()
     {
-        isLoading = true;           // Component-specific loading state
-        AppState.SetLoading(true);  // Global loading state for other components
+        isLoading = true;           // Component-specific loading state (shows component loader)
+        AppState.SetLoading(true);  // Global loading state for coordination (but we'll suppress app loader)
         errorState = null;
 
         try
@@ -363,10 +435,48 @@ The `UsersGrid` component demonstrates AppStateService integration with optimize
 }
 ```
 
-#### Benefits of AppStateService Integration
+## Component Architecture
+
+### UI Components
+
+The application uses a streamlined component architecture with focused namespaces:
+
+#### Button Component (`Components/UI/Button.razor`)
+
+A versatile, reusable button component with multiple variants and states:
+
+- **Variants**: Primary, Secondary, Success, Danger
+- **Sizes**: Small, Medium, Large
+- **States**: Loading, Disabled
+- **Features**: Smooth animations, hover effects, accessibility support
+
+```csharp
+<Button Variant="ButtonVariant.Primary"
+        Size="ButtonSize.Medium"
+        IsLoading="@isLoading"
+        OnClick="HandleClick">
+    Click Me
+</Button>
+```
+
+#### UsersGrid Component (`Components/UI/UsersGrid.razor`)
+
+Advanced data grid component with comprehensive features:
+
+- **AG Grid v33.3.2 Integration**: Modern data grid with sorting, filtering, selection
+- **Error Handling**: Comprehensive error states with retry mechanisms
+- **Loading States**: Intelligent loading indicators with state coordination
+- **Accessibility**: WCAG-compliant with proper ARIA attributes
+- **Responsive Design**: Fixed-height strategy for reliable rendering
+
+### Benefits of Enhanced AppStateService Integration
 
 - **No Manual StateHasChanged()**: Components automatically re-render when state changes
-- **Dual Loading State Management**: Components maintain local loading states while coordinating with global state
+- **Intelligent Loader Management**: Prevents duplicate loading indicators through component loading awareness
+- **Smart Global Loader Suppression**: Automatically hides global loader when components show their own loading UI
+- **Triple Loading State Coordination**: Components maintain local loading states while coordinating with global state and suppressing duplicate loaders
+- **Cross-Component Loading Awareness**: Both page-level and component-level operations coordinate seamlessly
+- **Unified Loading Pattern**: Consistent implementation across UsersGrid component and Home page refresh functionality
 - **Global Loading Awareness**: Other components can react to loading states across the app
 - **Centralized State**: Single source of truth for application-wide state
 - **Performance Optimized**: Only triggers updates when state actually changes
@@ -376,12 +486,13 @@ The `UsersGrid` component demonstrates AppStateService integration with optimize
 - **Enhanced Refresh Functionality**: Grid state reset ensures clean re-initialization during refresh operations
 - **Automatic Grid Initialization**: Improved finally block logic ensures grid initialization occurs automatically after successful data loading
 - **Debug Traceability**: Console logging for data loading operations provides clear visibility into component lifecycle and async operations
+- **Button State Management**: Refresh buttons automatically disable during loading operations with visual feedback
 
-#### Loading State Management Strategy
+#### Intelligent Loading State Management Strategy
 
-The UsersGrid component implements a **dual loading state approach** with streamlined UI feedback for optimal user experience:
+The application implements a **comprehensive triple-layer loading state approach** with intelligent global loader suppression across all components for optimal user experience:
 
-**Local Loading State (`isLoading`)**:
+**Local Loading State (`isLoading`/`isRefreshing`)**:
 
 - Controls component-specific UI elements (button states, grid visibility, retry button styling)
 - Provides immediate visual feedback without waiting for global state propagation
@@ -397,12 +508,21 @@ The UsersGrid component implements a **dual loading state approach** with stream
 - Supports global loading indicators and navigation restrictions
 - **Automatically triggers UI updates** via the AppStateService event system without manual `StateHasChanged()` calls
 
+**Component Loading Awareness (`AppState.SetComponentLoading()`)**:
+
+- Tracks when components are showing their own loading UI
+- Automatically suppresses global loading spinner to prevent duplicate indicators
+- Enables intelligent loader coordination across the application
+- Ensures clean user experience without conflicting loading states
+- **Smart suppression logic**: `ShowGlobalLoader` property returns `true` only when there's global loading but no component-level loading
+
 ```csharp
-// Dual loading state pattern in UsersGrid
+// Triple-layer loading state pattern in UsersGrid component
 private async Task LoadUsers()
 {
-    isLoading = true;           // Immediate component UI update
-    AppState.SetLoading(true);  // Global coordination
+    isLoading = true;                    // Component-specific loading state (shows component loader)
+    AppState.SetLoading(true);           // Global loading state for coordination
+    AppState.SetComponentLoading(true);  // Suppress global loader to prevent duplicates
 
     try
     {
@@ -410,12 +530,32 @@ private async Task LoadUsers()
     }
     finally
     {
-        isLoading = false;          // Component returns to normal state
-        AppState.SetLoading(false); // Global state cleared
+        isLoading = false;                    // Component returns to normal state
+        AppState.SetLoading(false);           // Global state cleared
+        AppState.SetComponentLoading(false);  // Re-enable global loader for other operations
     }
 }
 
-// Conditional rendering with flexible layout management
+// Triple-layer loading state pattern in Home page component
+private async Task RefreshData()
+{
+    isRefreshing = true;                 // Component-specific loading state
+    AppState.SetLoading(true);           // Global loading state for coordination
+    AppState.SetComponentLoading(true);  // Suppress global loader since we show our own
+
+    try
+    {
+        await usersGrid.RefreshData();
+    }
+    finally
+    {
+        isRefreshing = false;                 // Clear component loading state
+        AppState.SetLoading(false);           // Clear global loading state
+        AppState.SetComponentLoading(false);  // Allow global loader to show again if needed
+    }
+}
+
+// Conditional rendering with intelligent loader management
 @if (errorState != null)
 {
     <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-4">
@@ -425,16 +565,22 @@ private async Task LoadUsers()
 else if (isLoading)
 {
     <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-4">
-        <!-- Loading state content -->
+        <!-- Loading state content with component-specific loader -->
     </div>
 }
 else
 {
-    <div id="@ContainerId" class="ag-theme-alpine" style="height: @Height; width: @Width;"></div>
+    <div id="@ContainerId" class="ag-theme-quartz" style="height: @Height; width: @Width;"></div>
+}
+
+// Global loader in main layout only shows when appropriate
+@if (AppState.ShowGlobalLoader)
+{
+    <!-- Global loading spinner - automatically suppressed when components show their own loaders -->
 }
 ```
 
-This approach ensures both immediate component responsiveness and proper global state coordination with flexible layout management.
+This approach ensures immediate component responsiveness, proper global state coordination, and intelligent loader suppression to prevent duplicate loading indicators while maintaining clean user experience across the entire application. The pattern is consistently implemented across both the UsersGrid component and the Home page for unified loading state management.
 
 ### Accessibility Enhancements
 
