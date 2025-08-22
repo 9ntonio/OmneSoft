@@ -29,6 +29,43 @@ console.warn = function (...args) {
   originalConsoleWarn.apply(console, args);
 };
 
+// Custom Status Panel Component for AG Grid v33 Community Edition
+class CustomRecordCountStatusPanel {
+  init(params) {
+    this.params = params;
+    this.eGui = document.createElement('div');
+    this.eGui.className = 'ag-status-panel ag-status-panel-custom-record-count';
+    this.eGui.style.cssText =
+      'padding: 4px 8px; font-size: 12px; color: #6b7280;';
+    this.updateCount();
+
+    // Listen for data changes
+    params.api.addEventListener('modelUpdated', () => this.updateCount());
+    params.api.addEventListener('filterChanged', () => this.updateCount());
+  }
+
+  updateCount() {
+    if (!this.params || !this.params.api) return;
+
+    const totalRows = this.params.api.getDisplayedRowCount();
+    const allRows = this.params.api.getModel().getRowCount();
+
+    if (totalRows === allRows) {
+      this.eGui.innerHTML = `${totalRows} records`;
+    } else {
+      this.eGui.innerHTML = `${totalRows} of ${allRows} records`;
+    }
+  }
+
+  getGui() {
+    return this.eGui;
+  }
+
+  destroy() {
+    // Cleanup if needed
+  }
+}
+
 // Users App JavaScript Interop for Blazor
 window.usersInterop = {
   grids: new Map(),
@@ -111,6 +148,13 @@ window.usersInterop = {
           selectedRowBackgroundColor: '#dbeafe',
         };
       }
+
+      // Register custom status panel components for v33 Community Edition
+      if (!gridOptions.components) {
+        gridOptions.components = {};
+      }
+      gridOptions.components.customRecordCountStatusPanel =
+        CustomRecordCountStatusPanel;
 
       // Add value formatters for object/array fields to prevent AG Grid v33 warnings
       if (gridOptions.columnDefs) {

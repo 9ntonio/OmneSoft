@@ -112,17 +112,10 @@ else
     private ErrorState? errorState = null;
     private object[]? usersData;
     private string quickFilterText = string.Empty;
+    private System.Threading.Timer? debounceTimer;
 
     private object[] columnDefs = new object[]
     {
-        new {
-            field = "id",
-            headerName = "ID",
-            width = 100,
-            filter = "agTextColumnFilter",
-            sortable = true,
-            resizable = true
-        },
         new {
             field = "fullName",
             headerName = "Full Name",
@@ -132,16 +125,8 @@ else
             resizable = true
         },
         new {
-            field = "email",
-            headerName = "Email",
-            width = 220,
-            filter = "agTextColumnFilter",
-            sortable = true,
-            resizable = true
-        },
-        new {
             field = "roles",
-            headerName = "Roles",
+            headerName = "Assigned Roles",
             width = 200,
             filter = "agTextColumnFilter",
             sortable = true,
@@ -156,10 +141,10 @@ else
             resizable = true
         },
         new {
-            field = "status",
-            headerName = "Status",
-            width = 100,
-            filter = "agSetColumnFilter",
+            field = "email",
+            headerName = "Email",
+            width = 220,
+            filter = "agTextColumnFilter",
             sortable = true,
             resizable = true
         },
@@ -168,6 +153,14 @@ else
             headerName = "Last Active",
             width = 150,
             filter = "agDateColumnFilter",
+            sortable = true,
+            resizable = true
+        },
+        new {
+            field = "status",
+            headerName = "Status",
+            width = 100,
+            filter = "agSetColumnFilter",
             sortable = true,
             resizable = true
         },
@@ -439,11 +432,30 @@ else
                 // Quick Filter (Global Search)
                 quickFilterText = "",
 
-                // Pagination Configuration
+                // Pagination Configuration (AG Grid v33 Community Edition)
                 pagination = true,
-                paginationPageSize = 20,
-                paginationPageSizeSelector = new int[] { 10, 20, 50, 100 },
+                paginationPageSize = 25,
+                paginationPageSizeSelector = new int[] { 10, 25, 50 },
                 paginationAutoPageSize = false,
+                suppressPaginationPanel = false,
+
+                // Status Bar Configuration for Record Count (v33 Community Edition)
+                statusBar = new {
+                    statusPanels = new object[] {
+                        new {
+                            statusPanel = "customRecordCountStatusPanel",
+                            align = "left"
+                        },
+                        new {
+                            statusPanel = "agTotalRowCountComponent",
+                            align = "center"
+                        },
+                        new {
+                            statusPanel = "agFilteredRowCountComponent",
+                            align = "right"
+                        }
+                    }
+                },
 
                 // Column Filters
                 enableFilter = true,
@@ -555,17 +567,34 @@ else
         }
     }
 
-    private async Task OnQuickFilterChanged(ChangeEventArgs e)
+    private void OnQuickFilterChanged(ChangeEventArgs e)
     {
         quickFilterText = e.Value?.ToString() ?? string.Empty;
-        if (isGridInitialized)
+
+        // Dispose existing timer
+        debounceTimer?.Dispose();
+
+        // Create new timer with 300ms delay
+        debounceTimer = new System.Threading.Timer(_ =>
         {
-            await JSRuntime.InvokeVoidAsync("usersInterop.setQuickFilter", ContainerId, quickFilterText);
-        }
+            if (isGridInitialized)
+            {
+                InvokeAsync(async () =>
+                {
+                    await JSRuntime.InvokeVoidAsync("usersInterop.setQuickFilter", ContainerId, quickFilterText);
+                });
+            }
+            debounceTimer?.Dispose();
+            debounceTimer = null;
+        }, null, 300, Timeout.Infinite);
     }
 
     private async Task ClearQuickFilter()
     {
+        // Cancel any pending debounced filter
+        debounceTimer?.Dispose();
+        debounceTimer = null;
+
         quickFilterText = string.Empty;
         if (isGridInitialized)
         {
@@ -575,6 +604,10 @@ else
 
     private async Task ClearAllFilters()
     {
+        // Cancel any pending debounced filter
+        debounceTimer?.Dispose();
+        debounceTimer = null;
+
         quickFilterText = string.Empty;
         if (isGridInitialized)
         {
@@ -641,6 +674,9 @@ else
         // Unsubscribe from global state changes to prevent memory leaks
         AppState.OnChange -= StateHasChanged;
 
+        // Dispose of debounce timer
+        debounceTimer?.Dispose();
+
         // Dispose of .NET object reference
         dotNetRef?.Dispose();
     }
@@ -652,6 +688,9 @@ else
         {
             await JSRuntime.InvokeVoidAsync("usersInterop.destroyGrid", ContainerId);
         }
+
+        // Dispose of debounce timer
+        debounceTimer?.Dispose();
 
         // Call synchronous dispose
         Dispose();

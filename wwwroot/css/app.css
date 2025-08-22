@@ -47,7 +47,7 @@
 
   /* Ensure proper grid sizing - no percentages for AG Grid v33 */
   #users-grid {
-    height: calc(100vh - 200px) !important;
+    height: calc(100vh - 250px) !important;
     min-height: 500px !important;
     width: 100% !important;
     position: relative;
@@ -55,7 +55,7 @@
 
   /* General grid container class for any ag-grid */
   .ag-grid-container {
-    height: calc(100vh - 200px) !important;
+    height: calc(100vh - 250px) !important;
     min-height: 500px !important;
     width: 100% !important;
     position: relative;
