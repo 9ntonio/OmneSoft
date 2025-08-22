@@ -383,7 +383,7 @@ The OmneSoft application is a fully functional Blazor WebAssembly project with t
 - **Professional User Management Interface**: Complete home page with branded header, data grid, and controls
 - **Advanced AG Grid Integration**: Stable v33.3.2 implementation with Quartz theme, pagination, global search, column filtering, and responsive flex columns
 - **AG Grid v33 Height Fix**: Automatic percentage-to-fixed height conversion to prevent Community Edition rendering issues
-- **Error Simulation System**: Built-in error testing with 5 different error scenarios (50% chance when enabled)
+- **Error Simulation System**: Built-in error testing with 5 different error scenarios
 - **Comprehensive Error Handling**: Network errors, timeouts, JSON parsing, HTTP status codes, and unexpected errors
 - **Hybrid State Management**: Centralized AppStateService with reactive patterns, dual loading states, and comprehensive disposal patterns
 - **Cross-Component Coordination**: Components automatically react to global state changes with memory-safe subscription patterns
@@ -463,7 +463,7 @@ The application opens to the **Users Management** interface featuring:
 
 - **Data Grid**: Displays user information with advanced sorting, filtering, pagination, global search, and selection capabilities
 - **Refresh Button**: Reloads data and resets grid state
-- **Error Simulation Toggle**: Enables/disables error simulation for testing (50% chance when enabled)
+- **Error Simulation Toggle**: Enables/disables error simulation for testing
 - **Professional Layout**: Full-height responsive design with branded header and footer
 
 #### Error Simulation
@@ -583,7 +583,7 @@ The application includes built-in error simulation for testing with intelligent 
 
 1. Toggle "Simulate Errors" switch in the header (changes apply immediately with intelligent state tracking)
 2. Grid automatically refreshes data when simulation mode changes
-3. Test different error types and recovery mechanisms (50% chance when enabled)
+3. Test different error types and recovery mechanisms
 4. Verify user feedback and retry functionality
 5. Toggle can be changed multiple times without manual refresh
 
