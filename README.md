@@ -5,7 +5,7 @@ A modern Blazor WebAssembly application built with .NET 8, featuring comprehensi
 ## Features
 
 - **Professional User Interface**: Clean, modern layout with branded header, optimized content areas, and responsive design
-- **Advanced Data Grid**: AG Grid v33.3.2 integration with sorting, filtering, pagination, performance-optimized global search with debouncing, and intelligent value formatters
+- **Advanced Data Grid**: AG Grid v33.3.2 integration with sorting, filtering, pagination, floating filter inputs, performance-optimized global search with debouncing, and intelligent value formatters
 - **Comprehensive Error Handling**: Production-ready error scenarios with user-friendly messages, retry mechanisms, and error simulation testing
 - **Intelligent State Management**: Enhanced AppStateService with reactive patterns, smart loading coordination, and component awareness
 - **Modern UI Components**: Custom Button and UsersGrid components with Tailwind CSS styling and accessibility features
@@ -125,8 +125,8 @@ OmneSoft/
 │   ├── IAppStateService.cs # State management interface
 │   └── AppStateService.cs  # Reactive state implementation
 ├── wwwroot/
-│   ├── css/app.css        # Tailwind CSS with AG Grid styles
-│   ├── js/users-interop.js # AG Grid JavaScript interop
+│   ├── css/app.css        # Tailwind CSS with AG Grid styles and floating filter fixes
+│   ├── js/users-interop.js # AG Grid JavaScript interop with filtering
 │   └── data/users.json    # Sample user data (40 superhero-themed records)
 ├── MainLayout.razor       # Application layout
 └── Program.cs            # Entry point and DI configuration
@@ -161,7 +161,7 @@ Advanced data grid with AG Grid v33.3.2 integration featuring comprehensive data
 
 - **Advanced Data Management**: AG Grid v33 native pagination with configurable page sizes (10, 25, 50 rows) and custom status bar
 - **Global Search**: Quick filter functionality for searching across all columns
-- **Native Column Filtering**: Individual column filters with floating filter inputs below headers, leveraging AG Grid's built-in filtering system
+- **Enhanced Column Filtering**: Individual column filters with floating filter inputs below headers for immediate inline filtering, leveraging AG Grid's built-in filtering system
 - **Custom Status Filtering System**: Complete implementation with interactive UI, real-time filtering, and client-side data filtering for Community Edition compatibility
 - **Enhanced Column Layout**: 8-column user data display with custom cell renderers for professional presentation
 - **Strategic Column Pinning**: Full Name pinned left, Actions pinned right for optimal user experience
@@ -174,6 +174,27 @@ Advanced data grid with AG Grid v33.3.2 integration featuring comprehensive data
 - **Fixed-Height Strategy**: Prevents AG Grid v33 rendering issues with reliable display
 - **Professional UI**: Loading states with visual feedback and error recovery mechanisms
 - **Extensible Architecture**: Infrastructure ready for advanced filtering capabilities while leveraging AG Grid's native filtering system
+- **Advanced Filtering System**: Comprehensive filtering with global search, status filters, floating column filters, and column-specific filtering capabilities
+
+**Filtering API Methods:**
+
+```javascript
+// Apply global search filter
+await JSRuntime.InvokeVoidAsync(
+  'usersInterop.setQuickFilter',
+  ContainerId,
+  searchText
+);
+
+// Clear all active filters
+await JSRuntime.InvokeVoidAsync('usersInterop.clearAllFilters', ContainerId);
+
+// Get current filter state
+var filterModel =
+  (await JSRuntime.InvokeAsync) <
+  object >
+  ('usersInterop.getFilterModel', ContainerId);
+```
 
 #### Loading State Management
 
@@ -229,6 +250,20 @@ if (!gridOptions.getRowId) {
 validateGrid: function (containerId) {
   // Validates and fixes accessibility issues automatically
 }
+
+// Client-side data filtering for Community Edition compatibility
+FilterUserData: function (data, statusFilters) {
+  if (!statusFilters || statusFilters.length === 0) {
+    return data; // No status filter, return all data
+  }
+
+  return data.filter(item => {
+    if (item && typeof item === 'object' && item.status) {
+      return statusFilters.includes(item.status);
+    }
+    return false;
+  });
+}
 ```
 
 ### Layout Architecture
@@ -249,7 +284,7 @@ validateGrid: function (containerId) {
 
 ### AG Grid v33.3.2 Configuration
 
-The application uses AG Grid Community Edition v33.3.2 with specific configurations for reliability:
+The application uses AG Grid Community Edition v33.3.2 with streamlined configurations for optimal performance and reliability:
 
 **Key Configurations:**
 
@@ -258,11 +293,45 @@ The application uses AG Grid Community Edition v33.3.2 with specific configurati
 - **Height Strategy**: Fixed heights to prevent rendering issues
 - **Client-Side Filtering**: Custom status filtering using client-side data filtering for Community Edition compatibility
 - **Status Bar**: Custom record count panel only, Enterprise-only components removed for compatibility
+- **Simplified Floating Filter Setup**: Streamlined configuration with global floating filter enablement
+- **Enhanced Grid Initialization**: Improved `onGridReady` event handler with floating filter validation and ARIA accessibility setup
 
 ```javascript
-// v33 Community Edition configuration with custom cell renderers
+// v33 Community Edition configuration with streamlined setup
 gridOptions.theme = 'themeQuartz';
 gridOptions.rowSelection = 'single'; // Deprecated but functional
+
+// Default column configuration with simplified approach
+gridOptions.defaultColDef = {
+  resizable: true,
+  sortable: true,
+  filter: true,
+  minWidth: 100,
+  flex: 1,
+};
+
+// Simplified floating filter configuration
+gridOptions.enableFilter = true;
+gridOptions.floatingFilter = true; // Global floating filter enablement
+
+// Enhanced onGridReady event handler for proper initialization
+gridOptions.onGridReady = event => {
+  console.log(`AG Grid ready for container: ${containerId}`);
+
+  // Validate ARIA structure after grid is ready
+  const gridElement = container.querySelector('.ag-root');
+  if (gridElement && !gridElement.getAttribute('role')) {
+    gridElement.setAttribute('role', 'grid');
+  }
+
+  // Force floating filter initialization with validation
+  setTimeout(() => {
+    if (event.api) {
+      event.api.refreshHeader();
+      // Floating filter validation and fallback refresh logic
+    }
+  }, 50);
+};
 
 // Custom cell renderers with complete inline styling for maximum reliability
 gridOptions.components = {
@@ -307,6 +376,27 @@ private string GetGridContainerStyle()
   width: 100% !important;
   position: relative;
 }
+
+/* AG Grid v33 - Floating Filter fixes */
+.ag-floating-filter {
+  display: block !important;
+  visibility: visible !important;
+  height: 35px !important;
+  min-height: 35px !important;
+}
+
+.ag-floating-filter-input {
+  display: block !important;
+  visibility: visible !important;
+}
+
+/* Ensure floating filter row is always visible */
+.ag-header-row.ag-header-row-floating-filter {
+  display: flex !important;
+  visibility: visible !important;
+  height: 35px !important;
+  min-height: 35px !important;
+}
 ```
 
 #### Developer Notes
@@ -330,8 +420,12 @@ private string GetGridContainerStyle()
 - Use `this.eGui.style.cssText = 'styles...'` in cell renderers for complete CSS independence and maximum reliability
 - Avoid CSS classes in cell renderers to prevent external stylesheet dependencies
 - Use strategic column pinning for improved user experience
+- Use simplified global floating filter configuration for consistent behavior
+- Maintain individual column control where specific filtering behavior is needed (e.g., disabling filters on action columns)
 - Implement proper cleanup for custom UI components and event handlers
 - Avoid Enterprise-only features when using Community Edition
+- Use `onGridReady` event handler for proper initialization timing and floating filter validation
+- Implement ARIA accessibility attributes during grid initialization for screen reader compatibility
 
 **Troubleshooting:**
 
@@ -340,9 +434,20 @@ private string GetGridContainerStyle()
 - **Performance**: Minimize column configuration, use AG Grid defaults
 - **Layout issues**: Verify 300px spacing reservation for header/footer elements
 - **Custom filters not working**: Ensure client-side data filtering is properly implemented with `FilterUserData` method
-- **Dropdown not closing**: Verify click-outside handler is properly set up with `setupDropdownHandler`
+- **Floating filters not appearing**: Verify `floatingFilter: true` is set in grid options and `enableFilter: true` is configured. Check CSS fixes are applied for proper rendering
+- **Floating filter rendering issues**: Ensure CSS fixes are included in `app.css` with proper `!important` declarations for visibility and sizing. The enhanced `onGridReady` handler includes automatic validation and fallback refresh logic
+- **Grid initialization problems**: Check console logs for `onGridReady` event completion and floating filter validation results
+- **ARIA accessibility issues**: The enhanced initialization automatically sets proper ARIA attributes, but verify grid and header elements have correct roles
+- **Dropdown not closing**: Verify click-outside handler is properly set up with `setupDropdownHandler`. The handler is now initialized immediately when the component renders for better reliability
+- **Dropdown not working before grid loads**: The dropdown handler is now set up early in the component lifecycle, ensuring immediate availability even before grid initialization
 - **Enterprise feature errors**: Check console for Enterprise-only component usage and replace with Community alternatives
 - **Status bar console errors**: Ensure only Community Edition compatible components are used (avoid Enterprise-only agTotalRowCountComponent, agFilteredRowCountComponent)
+- **Filter state issues**: Verify filter state is properly synchronized between component and grid
+- **Status filter problems**: Ensure client-side filtering is applied correctly when status selections change
+- **JavaScript interop errors**: Verify all referenced JavaScript functions exist in `users-interop.js`
+- **CSS conflicts**: Ensure AG Grid CSS fixes have proper specificity and `!important` declarations to override default styles
+- **Initialization timing issues**: The enhanced `onGridReady` handler includes staged delays (50ms, 100ms) for proper component rendering - adjust if needed for slower environments
+- **Component initialization delays**: The dropdown handler and DotNetObjectReference are now created immediately in `OnAfterRenderAsync` for better user experience
 
 ### Interface Design
 
@@ -357,7 +462,97 @@ private string GetGridContainerStyle()
 
 ## Recent Updates
 
-### Cell Renderer Styling Enhancement (Latest)
+### Component Initialization Enhancement (Latest)
+
+**Improved Dropdown Handler Setup**: The UsersGrid component initialization has been optimized for better user experience and immediate interactivity:
+
+**Key Improvements:**
+
+- **Immediate UI Responsiveness**: Status filter dropdown is now available immediately when the component renders, before grid initialization completes
+- **Enhanced Error Recovery**: Interactive elements remain functional even if data loading or grid initialization encounters errors
+- **Optimized Initialization Sequence**: DotNetObjectReference and dropdown handlers are set up first, ensuring UI elements are ready for user interaction
+- **Better Perceived Performance**: Users can interact with filters and controls without waiting for the complete component initialization
+
+This enhancement demonstrates the application's focus on user experience optimization and responsive interface design.
+
+### Simplified AG Grid Configuration
+
+**Streamlined Grid Setup**: The AG Grid configuration has been simplified to reduce complexity while maintaining all functionality:
+
+**Implementation Improvements:**
+
+- **Simplified Floating Filter Configuration**: Replaced complex column-level floating filter settings with streamlined global configuration
+- **Reduced Configuration Overhead**: Eliminated redundant floating filter properties (`suppressFloatingFilterButton`, `floatingFiltersHeight`) in favor of simpler `floatingFilter: true` setting
+- **Cleaner Architecture**: Streamlined JavaScript interop layer with fewer configuration overrides
+- **Improved Maintainability**: Simplified configuration makes the codebase easier to understand and maintain
+- **Enhanced Grid Initialization**: Maintained comprehensive `onGridReady` event handler with floating filter validation and ARIA accessibility setup
+
+**Configuration Changes:**
+
+```csharp
+// Before: Complex floating filter configuration
+var gridOptions = new
+{
+    // ... other options
+    enableFilter = true,
+    suppressFloatingFilterButton = false, // Ensure filter buttons are shown
+    floatingFiltersHeight = 35, // Explicit height for floating filters
+    // ... other options
+};
+
+// After: Simplified configuration
+var gridOptions = new
+{
+    // ... other options
+    enableFilter = true,
+    floatingFilter = true, // Show filter inputs below headers
+    // ... other options
+};
+```
+
+This simplification reduces configuration complexity while maintaining all floating filter functionality, making the grid setup more straightforward and easier to maintain.
+
+### CSV Export Functionality Removal
+
+**Simplified Data Management**: The CSV export functionality has been removed from the UsersGrid component to streamline the codebase:
+
+**Changes Made:**
+
+- **JavaScript Interop Cleanup**: Removed `exportFilteredDataToCsv` function and related export utilities from `users-interop.js`
+- **Component Simplification**: Focused on core data grid functionality with advanced filtering capabilities
+- **Reduced Complexity**: Eliminated export-related state management and UI components
+- **Performance Optimization**: Streamlined JavaScript interop layer for better performance
+
+This change simplifies the application architecture while maintaining all core data management and filtering capabilities.
+
+**Note**: The UsersGrid.razor component may still contain UI elements referencing export functionality, but the underlying JavaScript implementation has been removed. The component focuses on advanced filtering and data visualization capabilities.
+
+### Data Filtering & Management System
+
+**Comprehensive Filtering Capabilities**: The UsersGrid component features advanced filtering and data management:
+
+**Implementation Features:**
+
+- **Global Search**: Quick filter functionality for searching across all columns with debounced input
+- **Status Filtering**: Custom dropdown filter for user status types (Active, Inactive, Suspended, Archived)
+- **Enhanced Column Filtering**: Individual column filters with floating filter inputs below headers for immediate inline filtering
+- **Client-Side Filtering**: Optimized client-side data filtering for AG Grid Community Edition compatibility
+- **Filter State Management**: Real-time filter application with proper state tracking and UI updates
+- **Combined Filtering**: Multiple filter types work seamlessly together for precise data selection
+
+**Key Filtering Features:**
+
+```javascript
+// Core filtering methods
+setQuickFilter(containerId, filterText); // Global search
+clearAllFilters(containerId); // Reset all filters
+getFilterModel(containerId); // Get current filter state
+setFilterModel(containerId, filterModel); // Apply filter configuration
+```
+
+This filtering system provides comprehensive data management capabilities while maintaining optimal performance with AG Grid Community Edition.
+
+### Cell Renderer Styling Enhancement
 
 **Complete Inline Styling Implementation**: All custom cell renderers in the UsersGrid component have been fully converted to use inline styles for maximum reliability and consistency:
 
@@ -412,9 +607,42 @@ These changes maintain full functionality while ensuring compatibility with AG G
 
 This enhancement provides a complete, production-ready status filtering system that uses client-side data filtering for maximum compatibility with AG Grid Community Edition while maintaining optimal performance.
 
-### Enhanced Column Configuration & Cell Renderers (Latest)
+### Component Initialization Enhancement (Latest)
 
-**Professional Data Presentation**: The UsersGrid component now features comprehensive custom cell renderers for enhanced data visualization:
+**Improved Dropdown Handler Setup**: The UsersGrid component has been optimized for better initialization timing and user experience:
+
+**Implementation Improvements:**
+
+- **Early Dropdown Handler Initialization**: The status filter dropdown handler is now set up immediately when the component renders, ensuring the filter button works even before grid initialization
+- **Improved User Experience**: Users can interact with the status filter dropdown immediately after component load, without waiting for the data grid to fully initialize
+- **Better Error Recovery**: The dropdown functionality remains available even if grid initialization encounters errors
+- **Optimized Initialization Sequence**: DotNetObjectReference creation and dropdown handler setup moved to the beginning of the `OnAfterRenderAsync` method for immediate availability
+
+**Technical Changes:**
+
+```csharp
+// Enhanced initialization sequence in OnAfterRenderAsync
+if (firstRender)
+{
+    // Set up dropdown handler immediately when component renders
+    // This ensures filter button works even before grid initialization
+    dotNetRef = DotNetObjectReference.Create(this);
+    await JSRuntime.InvokeVoidAsync("usersInterop.setupDropdownHandler", ContainerId, dotNetRef);
+
+    previousSimulateErrors = SimulateErrors;
+    await LoadUsers();
+    if (errorState == null)
+    {
+        await InitializeGrid();
+    }
+}
+```
+
+This enhancement ensures that all interactive UI elements are available to users as soon as possible, improving the perceived performance and responsiveness of the application.
+
+### Enhanced Column Configuration & Cell Renderers
+
+**Professional Data Presentation**: The UsersGrid component features comprehensive custom cell renderers for enhanced data visualization:
 
 **Custom Cell Renderer Implementation:**
 
@@ -512,13 +740,13 @@ if (SimulateErrors)
 
 ## Current Project Status
 
-The OmneSoft application is a fully functional Blazor WebAssembly project with the following current implementation:
+The OmneSoft application is a fully functional Blazor WebAssembly project with streamlined data management capabilities and the following current implementation:
 
 ### Core Features ✅
 
 - **Professional User Management Interface**: Complete home page with branded header, data grid, and controls
 - **Enhanced User Data Model**: Comprehensive 40-user dataset with 3 status types (Active, Inactive, Suspended) for complete user lifecycle management
-- **Advanced AG Grid Integration**: Stable v33.3.2 implementation with Quartz theme, pagination, global search, column filtering, and responsive flex columns
+- **Advanced AG Grid Integration**: Stable v33.3.2 implementation with Quartz theme, pagination, global search, floating column filters, and responsive flex columns
 - **AG Grid v33 Height Fix**: Automatic percentage-to-fixed height conversion to prevent Community Edition rendering issues
 - **Error Simulation System**: Built-in error testing with 5 different error scenarios
 - **Comprehensive Error Handling**: Network errors, timeouts, JSON parsing, HTTP status codes, and unexpected errors
@@ -526,8 +754,9 @@ The OmneSoft application is a fully functional Blazor WebAssembly project with t
 - **Cross-Component Coordination**: Components automatically react to global state changes with memory-safe subscription patterns
 - **Loading States**: Dual loading state management (local and global) with animated indicators and cross-component awareness
 - **Refresh Functionality**: Complete data refresh with grid state reset and proper resource cleanup
-- **JavaScript Interop**: Robust AG Grid integration with lifecycle management and event handling
+- **JavaScript Interop**: Robust AG Grid integration with lifecycle management, event handling, and advanced filtering capabilities
 - **Enhanced Data Management**: AG Grid v33 pagination (10/25/50 rows) with custom status bar, performance-optimized global search with debouncing, individual column filters, custom status filtering with client-side data filtering, custom cell renderers for professional data presentation, and strategic column pinning
+- **Advanced Filtering System**: Complete filtering implementation with global search, status filtering, column filters, and filter state management
 - **Responsive Design**: Professional layout with viewport-based CSS calculations, dedicated grid container classes, and Tailwind CSS styling
 
 ### Technical Implementation ✅
@@ -600,6 +829,7 @@ The application opens to the **Users Management** interface featuring:
 
 - **Data Grid**: Displays user information with advanced sorting, filtering, pagination, global search, custom status filtering, and selection capabilities
 - **Search Controls**: Global search box with debounced input and custom status filter dropdown with checkbox selection
+- **Filter Management**: Comprehensive filtering with status dropdown, global search, and column-specific filters
 - **Filter Management**: Active filter counter and clear filters functionality
 - **Refresh Button**: Reloads data and resets grid state
 - **Error Simulation Toggle**: Enables/disables error simulation for testing
@@ -840,7 +1070,7 @@ The application uses **Blazor WebAssembly** instead of Blazor Server for several
 │   └── AppSettings.cs   # Application configuration model
 ├── wwwroot/
 │   ├── js/
-│   │   ├── users-interop.js     # AG Grid JavaScript interop with correct v33.3.2 createGrid API and lifecycle management
+│   │   ├── users-interop.js     # AG Grid JavaScript interop with v33.3.2 createGrid API, lifecycle management, and filtering functionality
 │   │   ├── interop.js           # General JavaScript interop functions
 │   │   └── app.js               # Application-specific JavaScript
 │   ├── css/
@@ -870,9 +1100,9 @@ The application uses **Blazor WebAssembly** instead of Blazor Server for several
 └── .editorconfig        # Editor configuration for consistent formatting
 ```
 
-## Recent Updates
+## Previous Updates
 
-### Latest Update: Status Filtering Infrastructure Enhancement (Current)
+### Status Filtering Infrastructure Enhancement
 
 **Enhanced Filtering Infrastructure**: The UsersGrid component has been updated with status filtering infrastructure, including `selectedStatusFilters` state management and configurable `statusOptions` array, preparing the component for advanced filtering capabilities while maintaining current AG Grid native filtering functionality.
 

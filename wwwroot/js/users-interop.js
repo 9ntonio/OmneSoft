@@ -446,10 +446,13 @@ window.usersInterop = {
       }
 
       // Set default grid options for v33 Community Edition
+      // Don't override floatingFilter here - let column definitions control it
       gridOptions.defaultColDef = {
         resizable: true,
         sortable: true,
         filter: true,
+        minWidth: 100,
+        flex: 1,
         ...gridOptions.defaultColDef,
       };
 
@@ -518,6 +521,9 @@ window.usersInterop = {
       delete gridOptions.enableRangeSelection;
       delete gridOptions.animateRows;
       delete gridOptions.suppressRowClickSelection;
+
+      // Ensure container is completely clean before creating grid
+      container.innerHTML = '';
 
       // Create the grid using v33 API - correct method
       console.log('Creating grid with options:', gridOptions);
@@ -872,6 +878,46 @@ window.usersInterop = {
       return true;
     } catch (err) {
       console.error('Error validating grid:', err);
+      return false;
+    }
+  },
+
+  // Refresh filters to ensure they're properly displayed
+  refreshFilters: function (containerId) {
+    try {
+      const gridApi = this.grids.get(containerId);
+      if (gridApi) {
+        // Force refresh of header and floating filters
+        gridApi.refreshHeader();
+
+        // Additional check to ensure floating filter row is visible
+        setTimeout(() => {
+          const container = document.getElementById(containerId);
+          if (container) {
+            const floatingFilterRow = container.querySelector(
+              '.ag-floating-filter'
+            );
+            if (floatingFilterRow) {
+              // Ensure floating filter row is visible
+              floatingFilterRow.style.display = '';
+              console.log('Floating filters refreshed successfully');
+            } else {
+              console.warn(
+                'Floating filter row not found, attempting to trigger refresh'
+              );
+              // Try to trigger a column resize to force filter rendering
+              if (gridApi.sizeColumnsToFit) {
+                gridApi.sizeColumnsToFit();
+              }
+            }
+          }
+        }, 100);
+
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error refreshing filters:', err);
       return false;
     }
   },

@@ -164,6 +164,7 @@ else
             headerName = "Full Name",
             width = 200,
             filter = "agTextColumnFilter",
+            floatingFilter = true,
             sortable = true,
             resizable = true,
             cellRenderer = "fullNameCellRenderer",
@@ -174,6 +175,7 @@ else
             headerName = "Assigned Roles",
             width = 180,
             filter = "agTextColumnFilter",
+            floatingFilter = true,
             sortable = true,
             resizable = true,
             cellRenderer = "rolesCellRenderer"
@@ -183,6 +185,7 @@ else
             headerName = "License",
             width = 120,
             filter = "agTextColumnFilter",
+            floatingFilter = true,
             sortable = true,
             resizable = true,
             cellRenderer = "licenseCellRenderer"
@@ -192,6 +195,7 @@ else
             headerName = "Email",
             width = 220,
             filter = "agTextColumnFilter",
+            floatingFilter = true,
             sortable = true,
             resizable = true,
             cellRenderer = "emailCellRenderer"
@@ -201,6 +205,7 @@ else
             headerName = "Last Active",
             width = 160,
             filter = "agTextColumnFilter",
+            floatingFilter = true,
             sortable = true,
             resizable = true,
             cellRenderer = "lastActiveCellRenderer"
@@ -210,6 +215,7 @@ else
             headerName = "Status",
             width = 100,
             filter = "agTextColumnFilter",
+            floatingFilter = true,
             sortable = true,
             resizable = true,
             cellRenderer = "statusCellRenderer"
@@ -219,6 +225,7 @@ else
             headerName = "Invite?",
             width = 80,
             filter = "agTextColumnFilter",
+            floatingFilter = true,
             sortable = true,
             resizable = true,
             cellRenderer = "inviteCellRenderer"
@@ -228,6 +235,7 @@ else
             headerName = "Actions",
             width = 100,
             filter = false,
+            floatingFilter = false,
             sortable = false,
             resizable = true,
             cellRenderer = "actionsCellRenderer",
@@ -250,15 +258,17 @@ else
     {
         if (firstRender)
         {
+            // Set up dropdown handler immediately when component renders
+            // This ensures filter button works even before grid initialization
+            dotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("usersInterop.setupDropdownHandler", ContainerId, dotNetRef);
+
             previousSimulateErrors = SimulateErrors;
             await LoadUsers();
             if (errorState == null)
             {
                 await InitializeGrid();
             }
-
-            // Add click outside handler for dropdown
-            await JSRuntime.InvokeVoidAsync("usersInterop.setupDropdownHandler", ContainerId, dotNetRef);
         }
     }
 
@@ -472,7 +482,7 @@ else
     {
         try
         {
-            dotNetRef = DotNetObjectReference.Create(this);
+            // dotNetRef is already created in OnAfterRenderAsync
             var validRowData = usersData ?? Array.Empty<object>();
 
             System.Console.WriteLine($"Initializing grid with {validRowData.Length} rows");
@@ -519,7 +529,7 @@ else
                     }
                 },
 
-                // Column Filters
+                // Column Filters - AG Grid v33 Community Edition
                 enableFilter = true,
                 floatingFilter = true, // Show filter inputs below headers
 
@@ -772,6 +782,8 @@ else
             StateHasChanged();
         }
     }
+
+
 
 
 
