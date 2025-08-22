@@ -179,7 +179,7 @@ else
             field = "license",
             headerName = "License",
             width = 120,
-            filter = "agSetColumnFilter",
+            filter = "agTextColumnFilter", // Changed from agSetColumnFilter (Enterprise) to agTextColumnFilter (Community)
             sortable = true,
             resizable = true
         },
@@ -195,7 +195,7 @@ else
             field = "lastActive",
             headerName = "Last Active",
             width = 150,
-            filter = "agDateColumnFilter",
+            filter = "agTextColumnFilter", // Changed from agDateColumnFilter (Enterprise) to agTextColumnFilter (Community)
             sortable = true,
             resizable = true
         },
@@ -203,7 +203,7 @@ else
             field = "status",
             headerName = "Status",
             width = 100,
-            filter = "agSetColumnFilter",
+            filter = "agTextColumnFilter", // Changed from agSetColumnFilter (Enterprise) to agTextColumnFilter (Community)
             sortable = true,
             resizable = true
         },
@@ -460,6 +460,8 @@ else
             System.Console.WriteLine($"Initializing grid with {validRowData.Length} rows");
             System.Console.WriteLine($"Container ID: {ContainerId}");
 
+            // AG Grid v33 Community Edition Configuration
+            // Enterprise-only features have been removed or replaced with Community alternatives
             var gridOptions = new
             {
                 columnDefs = columnDefs,
@@ -486,20 +488,16 @@ else
                 suppressPaginationPanel = false,
 
                 // Status Bar Configuration for Record Count (v33 Community Edition)
+                // Note: agTotalRowCountComponent and agFilteredRowCountComponent are Enterprise-only
                 statusBar = new {
                     statusPanels = new object[] {
                         new {
                             statusPanel = "customRecordCountStatusPanel",
                             align = "left"
-                        },
-                        new {
-                            statusPanel = "agTotalRowCountComponent",
-                            align = "center"
-                        },
-                        new {
-                            statusPanel = "agFilteredRowCountComponent",
-                            align = "right"
                         }
+                        // Enterprise-only components removed to prevent console errors:
+                        // - agTotalRowCountComponent (Enterprise)
+                        // - agFilteredRowCountComponent (Enterprise)
                     }
                 },
 

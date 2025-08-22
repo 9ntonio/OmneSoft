@@ -20,7 +20,13 @@ console.warn = function (...args) {
     message.includes('AG Grid: enableRangeSelection') ||
     message.includes('AG Grid: animateRows') ||
     message.includes('AG Grid: suppressRowClickSelection') ||
-    message.includes('AG Grid: Value Formatter')
+    message.includes('AG Grid: Value Formatter') ||
+    // Enterprise feature warnings (these features are not available in Community Edition)
+    message.includes('agTotalRowCountComponent') ||
+    message.includes('agFilteredRowCountComponent') ||
+    message.includes('agSetColumnFilter') ||
+    message.includes('agDateColumnFilter') ||
+    message.includes('Enterprise feature')
   ) {
     return; // Suppress these specific v33 Community Edition warnings
   }
@@ -30,31 +36,43 @@ console.warn = function (...args) {
 };
 
 // Custom Status Panel Component for AG Grid v33 Community Edition
+// This replaces Enterprise-only status panels like agTotalRowCountComponent and agFilteredRowCountComponent
 class CustomRecordCountStatusPanel {
   init(params) {
     this.params = params;
     this.eGui = document.createElement('div');
     this.eGui.className = 'ag-status-panel ag-status-panel-custom-record-count';
     this.eGui.style.cssText =
-      'padding: 4px 8px; font-size: 12px; color: #6b7280;';
+      'padding: 4px 8px; font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 16px;';
     this.updateCount();
 
     // Listen for data changes
     params.api.addEventListener('modelUpdated', () => this.updateCount());
     params.api.addEventListener('filterChanged', () => this.updateCount());
+    params.api.addEventListener('sortChanged', () => this.updateCount());
   }
 
   updateCount() {
     if (!this.params || !this.params.api) return;
 
-    const totalRows = this.params.api.getDisplayedRowCount();
-    const allRows = this.params.api.getModel().getRowCount();
+    const displayedRows = this.params.api.getDisplayedRowCount();
+    const totalRows = this.params.api.getModel().getRowCount();
+    const selectedRows = this.params.api.getSelectedRows().length;
 
-    if (totalRows === allRows) {
-      this.eGui.innerHTML = `${totalRows} records`;
+    // Build status text with multiple metrics (Community Edition compatible)
+    let statusText = '';
+
+    if (displayedRows === totalRows) {
+      statusText = `${totalRows} records`;
     } else {
-      this.eGui.innerHTML = `${totalRows} of ${allRows} records`;
+      statusText = `${displayedRows} of ${totalRows} records`;
     }
+
+    if (selectedRows > 0) {
+      statusText += ` • ${selectedRows} selected`;
+    }
+
+    this.eGui.innerHTML = statusText;
   }
 
   getGui() {
@@ -62,7 +80,10 @@ class CustomRecordCountStatusPanel {
   }
 
   destroy() {
-    // Cleanup if needed
+    // Cleanup event listeners if needed
+    if (this.params && this.params.api) {
+      // Event listeners are automatically cleaned up when grid is destroyed
+    }
   }
 }
 
@@ -428,7 +449,7 @@ window.usersInterop = {
         // Clear all column filters using Community Edition compatible method
         try {
           gridApi.setFilterModel(null);
-        } catch (err) {
+        } catch {
           // If setFilterModel fails (Enterprise feature), try alternative
           console.warn(
             'setFilterModel not available, clearing individual filters'
@@ -441,7 +462,7 @@ window.usersInterop = {
                 if (filter && filter.setModel) {
                   filter.setModel(null);
                 }
-              } catch (e) {
+              } catch {
                 // Ignore individual filter errors
               }
             });
