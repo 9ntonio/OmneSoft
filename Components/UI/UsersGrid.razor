@@ -162,26 +162,30 @@ else
         new {
             field = "fullName",
             headerName = "Full Name",
-            width = 180,
+            width = 200,
             filter = "agTextColumnFilter",
             sortable = true,
-            resizable = true
+            resizable = true,
+            cellRenderer = "fullNameCellRenderer",
+            pinned = "left" // Pin to left for better UX
         },
         new {
             field = "roles",
             headerName = "Assigned Roles",
-            width = 200,
+            width = 180,
             filter = "agTextColumnFilter",
             sortable = true,
-            resizable = true
+            resizable = true,
+            cellRenderer = "rolesCellRenderer"
         },
         new {
             field = "license",
             headerName = "License",
             width = 120,
-            filter = "agTextColumnFilter", // Changed from agSetColumnFilter (Enterprise) to agTextColumnFilter (Community)
+            filter = "agTextColumnFilter",
             sortable = true,
-            resizable = true
+            resizable = true,
+            cellRenderer = "licenseCellRenderer"
         },
         new {
             field = "email",
@@ -189,31 +193,45 @@ else
             width = 220,
             filter = "agTextColumnFilter",
             sortable = true,
-            resizable = true
+            resizable = true,
+            cellRenderer = "emailCellRenderer"
         },
         new {
             field = "lastActive",
             headerName = "Last Active",
-            width = 150,
-            filter = "agTextColumnFilter", // Changed from agDateColumnFilter (Enterprise) to agTextColumnFilter (Community)
+            width = 160,
+            filter = "agTextColumnFilter",
             sortable = true,
-            resizable = true
+            resizable = true,
+            cellRenderer = "lastActiveCellRenderer"
         },
         new {
             field = "status",
             headerName = "Status",
             width = 100,
-            filter = "agTextColumnFilter", // Changed from agSetColumnFilter (Enterprise) to agTextColumnFilter (Community)
+            filter = "agTextColumnFilter",
             sortable = true,
-            resizable = true
+            resizable = true,
+            cellRenderer = "statusCellRenderer"
         },
         new {
             field = "invitedBy",
-            headerName = "Invited By",
-            width = 150,
+            headerName = "Invite?",
+            width = 80,
             filter = "agTextColumnFilter",
             sortable = true,
-            resizable = true
+            resizable = true,
+            cellRenderer = "inviteCellRenderer"
+        },
+        new {
+            field = "actions",
+            headerName = "Actions",
+            width = 100,
+            filter = false,
+            sortable = false,
+            resizable = true,
+            cellRenderer = "actionsCellRenderer",
+            pinned = "right" // Pin to right for easy access
         }
     };
 

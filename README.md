@@ -154,6 +154,7 @@ Advanced data grid with AG Grid v33.3.2 integration featuring comprehensive data
 [Parameter] public bool SimulateErrors { get; set; } = false;
 [Parameter] public string SelectionMode { get; set; } = "single";
 [Parameter] public EventCallback<object> OnRowClicked { get; set; }
+[Parameter] public EventCallback<object[]> OnSelectionChanged { get; set; }
 ```
 
 **Key Features:**
@@ -162,9 +163,11 @@ Advanced data grid with AG Grid v33.3.2 integration featuring comprehensive data
 - **Global Search**: Quick filter functionality for searching across all columns
 - **Native Column Filtering**: Individual column filters with floating filter inputs below headers, leveraging AG Grid's built-in filtering system
 - **Custom Status Filtering System**: Complete implementation with interactive UI, real-time filtering, and client-side data filtering for Community Edition compatibility
-- **Optimized Column Layout**: 7-column user data display (Full Name, Roles, Email, License, Status, Last Active, Invited By) without technical ID column for cleaner user experience
-- **Optimized Column Order**: Logical column sequence (Full Name → Roles → Email → License → Status → Last Active → Invited By) for improved data scanning
-- **Flexible Layout**: Responsive columns with flex sizing for optimal space utilization
+- **Enhanced Column Layout**: 8-column user data display with custom cell renderers for professional presentation
+- **Strategic Column Pinning**: Full Name pinned left, Actions pinned right for optimal user experience
+- **Custom Cell Renderers**: Specialized renderers for each data type (fullName, roles, license, email, lastActive, status, invite, actions)
+- **Optimized Column Order**: Logical sequence (Full Name → Assigned Roles → License → Email → Last Active → Status → Invite → Actions) for improved data scanning
+- **Flexible Layout**: Responsive columns with flex sizing and strategic width allocation for optimal space utilization
 - **Intelligent Error Simulation**: Lifecycle-aware parameter detection with automatic state management
 - **Automatic Grid State Reset**: Clean state transitions during refresh operations
 - **WCAG-Compliant Accessibility**: Full ARIA attributes and keyboard navigation support
@@ -257,9 +260,23 @@ The application uses AG Grid Community Edition v33.3.2 with specific configurati
 - **Status Bar**: Custom record count panel only, Enterprise-only components removed for compatibility
 
 ```javascript
-// v33 Community Edition configuration
+// v33 Community Edition configuration with custom cell renderers
 gridOptions.theme = 'themeQuartz';
 gridOptions.rowSelection = 'single'; // Deprecated but functional
+
+// Custom cell renderers with complete inline styling for maximum reliability
+gridOptions.components = {
+  fullNameCellRenderer: FullNameCellRenderer, // Avatar + name with inline styles
+  rolesCellRenderer: RolesCellRenderer, // Role display with cssText styling
+  licenseCellRenderer: LicenseCellRenderer, // License badges with inline styles
+  emailCellRenderer: EmailCellRenderer, // Email links with inline styles
+  lastActiveCellRenderer: LastActiveCellRenderer, // Date formatting with inline styles
+  statusCellRenderer: StatusCellRenderer, // Status pills with inline styles
+  inviteCellRenderer: InviteCellRenderer, // Invite status with inline styles
+  actionsCellRenderer: ActionsCellRenderer, // Action buttons with inline styles
+};
+
+// All renderers use this.eGui.style.cssText = 'styles...' for CSS independence
 // Client-side data filtering used instead of external filter API for Community Edition compatibility
 // Custom status panel replaces Enterprise-only components (agTotalRowCountComponent, agFilteredRowCountComponent)
 ```
@@ -309,6 +326,10 @@ private string GetGridContainerStyle()
 - Test with error simulation enabled
 - Use built-in validation functions for ARIA structure
 - Use client-side data filtering for custom filtering in Community Edition
+- Implement custom cell renderers for professional data presentation
+- Use `this.eGui.style.cssText = 'styles...'` in cell renderers for complete CSS independence and maximum reliability
+- Avoid CSS classes in cell renderers to prevent external stylesheet dependencies
+- Use strategic column pinning for improved user experience
 - Implement proper cleanup for custom UI components and event handlers
 - Avoid Enterprise-only features when using Community Edition
 
@@ -336,7 +357,25 @@ private string GetGridContainerStyle()
 
 ## Recent Updates
 
-### AG Grid Community Edition Status Bar Optimization (Latest)
+### Cell Renderer Styling Enhancement (Latest)
+
+**Complete Inline Styling Implementation**: All custom cell renderers in the UsersGrid component have been fully converted to use inline styles for maximum reliability and consistency:
+
+**Implementation Improvements:**
+
+- **Full Inline Style Conversion**: All cell renderers now use `cssText` for inline styling instead of CSS classes, ensuring complete independence from external stylesheets
+- **FullNameCellRenderer Enhancement**: Avatar circles, spacing, and typography use inline styles with specific pixel values and color codes
+- **RolesCellRenderer Alignment Optimization**: Enhanced with flexbox layout (`display: flex; align-items: center; padding: 4px 0;`) for improved vertical alignment and consistent spacing with other cell renderers
+- **LicenseCellRenderer Padding Optimization**: Enhanced vertical spacing with `padding: 8px 0;` for improved visual balance and consistent alignment with other cell renderers, while maintaining refined badge styling with optimized dimensions (`padding: 2px 10px`, `border-radius: 12px`, `font-size: 13px`) and improved line-height (1.2) for enhanced readability and professional appearance
+- **InviteCellRenderer Alignment Enhancement**: Improved vertical alignment with `align-items: center` in addition to horizontal centering for perfect icon positioning within cells
+- **CSS Framework Independence**: Cell renderers no longer depend on Tailwind CSS or any external CSS frameworks
+- **Improved Reliability**: Inline styling prevents rendering issues that could occur if CSS classes are not available in the AG Grid context
+- **Professional Avatar Display**: Enhanced full name cell with circular avatar showing user initials, proper spacing, and bold name formatting
+- **Consistent Styling Approach**: All visual elements use inline styles with specific pixel values and color codes for predictable appearance across all renderers
+
+This enhancement ensures that all custom cell renderers work reliably in all environments and contexts, providing consistent professional appearance without any external dependencies. The complete conversion to inline styles eliminates potential styling conflicts and ensures reliable rendering regardless of CSS loading order or availability.
+
+### AG Grid Community Edition Status Bar Optimization
 
 **Enhanced Community Edition Compatibility**: The UsersGrid component has been optimized for AG Grid v33.3.2 Community Edition by removing Enterprise-only status bar components:
 
@@ -373,22 +412,28 @@ These changes maintain full functionality while ensuring compatibility with AG G
 
 This enhancement provides a complete, production-ready status filtering system that uses client-side data filtering for maximum compatibility with AG Grid Community Edition while maintaining optimal performance.
 
-### Current Status Management System (Current)
+### Enhanced Column Configuration & Cell Renderers (Latest)
 
-**Comprehensive Status Management**: The user dataset includes a well-defined status management system for complete user lifecycle tracking:
+**Professional Data Presentation**: The UsersGrid component now features comprehensive custom cell renderers for enhanced data visualization:
 
-**Status Type Implementation:**
+**Custom Cell Renderer Implementation:**
 
-- **Three-Tier Status System**: The application supports three distinct status types for comprehensive user management
-- **Current Status Distribution**: The 40-user dataset includes:
-  - **Active** (30 users): Currently active users with full access and regular system usage
-  - **Inactive** (7 users): Temporarily inactive users who may return to active status
-  - **Suspended** (3 users): Users with restricted access due to policy violations or security concerns
-- **AG Grid Native Filtering**: Status column uses AG Grid's built-in `agSetColumnFilter` for precise status selection and filtering
-- **Infrastructure Ready**: Component includes status filtering infrastructure with `statusOptions` array configured for current status types
-- **Flexible Architecture**: Status management system designed for easy extension and modification as business needs evolve
+- **Strategic Column Layout**: 8-column layout with optimized widths and strategic pinning for improved user experience
+- **Custom Cell Renderers**: Each column features specialized renderers for professional data presentation:
+  - **fullNameCellRenderer**: Enhanced name display with avatar circles, initials, and bold formatting using inline styles for maximum reliability (200px width, pinned left)
+  - **rolesCellRenderer**: Comma-separated role display with styling (180px width)
+  - **licenseCellRenderer**: License type formatting with visual indicators (120px width)
+  - **emailCellRenderer**: Email formatting with clickable links (220px width)
+  - **lastActiveCellRenderer**: Date/time formatting with relative time display (160px width)
+  - **statusCellRenderer**: Status badges with color coding (100px width)
+  - **inviteCellRenderer**: Compact invitation status display (80px width)
+  - **actionsCellRenderer**: Action buttons for user management (100px width, pinned right)
+- **Column Pinning Strategy**: Full Name pinned left for context, Actions pinned right for accessibility
+- **Responsive Width Allocation**: Optimized column widths totaling 1060px with flex sizing for container adaptation
+- **Inline Styling Approach**: Cell renderers use inline styles instead of CSS classes for maximum reliability and independence from external stylesheets
+- **Enhanced User Experience**: Strategic layout improvements for better data scanning and interaction
 
-This status management system provides clear user lifecycle tracking with the flexibility to adapt to changing organizational requirements while maintaining data integrity and user experience.
+This enhanced column configuration provides professional data presentation with improved usability and visual hierarchy while maintaining full AG Grid Community Edition compatibility.
 
 ### Error Simulation Enhancement & Grid Lifecycle Management
 
@@ -482,7 +527,7 @@ The OmneSoft application is a fully functional Blazor WebAssembly project with t
 - **Loading States**: Dual loading state management (local and global) with animated indicators and cross-component awareness
 - **Refresh Functionality**: Complete data refresh with grid state reset and proper resource cleanup
 - **JavaScript Interop**: Robust AG Grid integration with lifecycle management and event handling
-- **Enhanced Data Management**: AG Grid v33 pagination (10/25/50 rows) with custom status bar, performance-optimized global search with debouncing, individual column filters, custom status filtering with client-side data filtering, and responsive flex-based column layout
+- **Enhanced Data Management**: AG Grid v33 pagination (10/25/50 rows) with custom status bar, performance-optimized global search with debouncing, individual column filters, custom status filtering with client-side data filtering, custom cell renderers for professional data presentation, and strategic column pinning
 - **Responsive Design**: Professional layout with viewport-based CSS calculations, dedicated grid container classes, and Tailwind CSS styling
 
 ### Technical Implementation ✅
@@ -562,7 +607,47 @@ The application opens to the **Users Management** interface featuring:
 
 #### Error Simulation
 
-Toggle the "Simulate Errors" switch in the header to test error handling with intelligent lifecycle-aware response:
+Toggle the "Simulate Errors" switch in the header to test error handling scenarios:
+
+1. **Network Connection Error**: Simulates network connectivity issues
+2. **Request Timeout**: Simulates slow server response times
+3. **JSON Parsing Error**: Simulates malformed data responses
+4. **File Not Found (404)**: Simulates missing resource errors
+5. **Unexpected Error**: Simulates general application errors
+
+Each error type displays appropriate user feedback with retry mechanisms and clear error descriptions.
+
+#### Data Grid Features
+
+The AG Grid implementation includes:
+
+- **Sorting**: Click column headers to sort data
+- **Filtering**: Use the search box for global filtering or individual column filters
+- **Status Filtering**: Use the custom status dropdown to filter by user status
+- **Pagination**: Navigate through data with configurable page sizes (10, 25, 50 rows)
+- **Selection**: Click rows to select users (configurable single/multiple selection)
+- **Responsive Design**: Grid adapts to different screen sizes
+
+#### Development Features
+
+- **Hot Reload**: CSS and Blazor components update automatically during development
+- **Error Boundaries**: Comprehensive error handling with user-friendly messages
+- **Loading States**: Visual feedback during data operations
+- **Memory Management**: Proper cleanup of subscriptions and resources
+- **Accessibility**: WCAG-compliant implementation with screen reader support
+
+## Contributing
+
+This project follows modern development practices:
+
+- **Code Quality**: ESLint and Prettier ensure consistent formatting
+- **Git Hooks**: Husky runs quality checks before commits
+- **Architecture**: Clean separation of concerns with dependency injection
+- **Testing**: Error simulation system for comprehensive testing scenarios
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.andling with intelligent lifecycle-aware response:
 
 - **Network Errors**: Simulated connection failures
 - **Timeout Errors**: Request timeout scenarios
@@ -587,22 +672,24 @@ The UsersGrid component provides comprehensive data management capabilities:
   - Configurable page sizes (10, 25, 50 rows per page)
   - Navigation controls with page size selector
   - Automatic page size management
-- **Flexible Column Layout**: Responsive columns with flex sizing that automatically adjust to container width
+- **Enhanced Column Layout**: 8-column layout with custom cell renderers and strategic pinning (Full Name left, Actions right)
+- **Professional Data Presentation**: Custom cell renderers for each data type (fullName, roles, license, email, lastActive, status, invite, actions)
 - **Selection Management**: Single-row selection with event callbacks and keyboard navigation
-- **Responsive Design**: Automatically adapts to container size with optimal space utilization
+- **Responsive Design**: Automatically adapts to container size with optimal space utilization and flex sizing
 - **Professional Styling**: Modern Quartz theme with consistent appearance and accessibility compliance
 
 #### Column Structure
 
-The data grid displays the following user information columns in optimized order:
+The data grid displays the following user information columns in optimized order with custom cell renderers:
 
-- **Full Name**: User's complete name with text filtering
-- **Roles**: User roles displayed as comma-separated values with text filtering (manager, admin, field, analyst, tech, etc.)
-- **Email**: User's email address with text filtering
-- **License**: User license type with text filtering for flexible search capabilities
-- **Status**: User account status with native AG Grid set filtering for precise status selection (Active, Inactive, Suspended)
-- **Last Active**: Last activity timestamp with date filtering capabilities
-- **Invited By**: Name of the user who sent the invitation with text filtering
+- **Full Name**: User's complete name with text filtering and custom cell renderer (pinned left for better UX)
+- **Assigned Roles**: User roles displayed as comma-separated values with text filtering and custom role renderer (manager, admin, field, analyst, tech, etc.)
+- **License**: User license type with text filtering and custom license renderer for flexible search capabilities
+- **Email**: User's email address with text filtering and custom email renderer
+- **Last Active**: Last activity timestamp with text filtering and custom date/time renderer
+- **Status**: User account status with text filtering and custom status renderer (Active, Inactive, Suspended)
+- **Invite?**: Invitation status with custom invite renderer (compact 80px width)
+- **Actions**: User action buttons with custom actions renderer (pinned right for easy access)
 
 #### Data Management Features
 
