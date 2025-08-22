@@ -51,12 +51,12 @@
                 }
             };
 
-            isGridInitialized = await JSRuntime.InvokeAsync<bool>("agGridInterop.createGrid", ContainerId, gridOptions, dotNetRef);
+            isGridInitialized = await JSRuntime.InvokeAsync<bool>("usersInterop.createGrid", ContainerId, gridOptions, dotNetRef);
 
             if (isGridInitialized)
             {
                 await Task.Delay(100); // Small delay to ensure grid is ready
-                await JSRuntime.InvokeVoidAsync("agGridInterop.sizeToFit", ContainerId);
+                await JSRuntime.InvokeVoidAsync("usersInterop.sizeToFit", ContainerId);
             }
         }
         catch (Exception ex)
@@ -70,7 +70,7 @@
         if (isGridInitialized)
         {
             RowData = newRowData;
-            await JSRuntime.InvokeVoidAsync("agGridInterop.setRowData", ContainerId, newRowData);
+            await JSRuntime.InvokeVoidAsync("usersInterop.setRowData", ContainerId, newRowData);
         }
     }
 
@@ -78,7 +78,7 @@
     {
         if (isGridInitialized)
         {
-            return await JSRuntime.InvokeAsync<object[]>("agGridInterop.getSelectedRows", ContainerId);
+            return await JSRuntime.InvokeAsync<object[]>("usersInterop.getSelectedRows", ContainerId);
         }
         return Array.Empty<object>();
     }
@@ -87,7 +87,7 @@
     {
         if (isGridInitialized)
         {
-            await JSRuntime.InvokeVoidAsync("agGridInterop.sizeToFit", ContainerId);
+            await JSRuntime.InvokeVoidAsync("usersInterop.sizeToFit", ContainerId);
         }
     }
 
@@ -95,7 +95,7 @@
     {
         if (isGridInitialized)
         {
-            await JSRuntime.InvokeVoidAsync("agGridInterop.autoSizeAllColumns", ContainerId);
+            await JSRuntime.InvokeVoidAsync("usersInterop.autoSizeAllColumns", ContainerId);
         }
     }
 
@@ -121,7 +121,7 @@
     {
         if (isGridInitialized)
         {
-            await JSRuntime.InvokeVoidAsync("agGridInterop.destroyGrid", ContainerId);
+            await JSRuntime.InvokeVoidAsync("usersInterop.destroyGrid", ContainerId);
         }
         dotNetRef?.Dispose();
     }

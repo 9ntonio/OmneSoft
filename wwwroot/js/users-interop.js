@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 /* global agGrid */
 
-// AG Grid JavaScript Interop for Blazor
-window.agGridInterop = {
+// Users App JavaScript Interop for Blazor
+window.usersInterop = {
   grids: new Map(),
 
   // Initialize AG Grid

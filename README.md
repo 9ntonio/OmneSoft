@@ -6,6 +6,7 @@ A modern Blazor WebAssembly application built with .NET 8, featuring interactive
 
 - **Interactive Counter Demo**: Blazor component with state management and JSInterop integration
 - **AG Grid Integration**: Advanced data grid with sorting, filtering, and selection capabilities
+- **User Management Data**: Comprehensive user dataset with 40 superhero-themed records including roles, licenses, and status tracking
 - **Modern UI Components**: Custom Button and AgGrid components with Tailwind CSS styling
 - **State Management**: Centralized app state service with loading indicators
 - **Responsive Design**: Mobile-friendly layout with Tailwind CSS
@@ -89,7 +90,14 @@ The application uses **Blazor WebAssembly** instead of Blazor Server for several
 │   └── GridDemo.razor   # AG Grid demonstration
 ├── Services/            # Application services (AppStateService)
 ├── Models/              # Data models and configuration
-├── wwwroot/             # Static assets and configuration
+├── wwwroot/
+│   ├── js/
+│   │   ├── users-interop.js      # Users app AG Grid JavaScript interop
+│   │   └── interop.js            # General JavaScript interop functions
+│   ├── css/             # Compiled CSS files
+│   ├── data/
+│   │   └── users.json   # User management dataset (40 superhero-themed records)
+│   └── ...              # Other static assets
 └── *.razor              # Root components (App, MainLayout)
 ```
 
@@ -159,13 +167,14 @@ This application uses **IJSRuntime with Custom JavaScript Functions** for AG Gri
 
 ### Integration Architecture
 
-#### 1. **JavaScript Interop Layer** (`wwwroot/js/ag-grid-interop.js`)
+#### 1. **JavaScript Interop Layer** (`wwwroot/js/users-interop.js`)
 
 - Creates a bridge between Blazor C# and AG Grid JavaScript
 - Manages grid instances in a Map for multiple grids
 - Handles grid lifecycle: create, update, destroy
 - Provides callbacks for row clicks and selection changes
 - Uses the modern AG Grid v34+ API (`agGrid.createGrid()`)
+- Namespace: `window.usersInterop`
 
 #### 2. **Blazor Component** (`Components/UI/AgGrid.razor`)
 
@@ -174,12 +183,13 @@ This application uses **IJSRuntime with Custom JavaScript Functions** for AG Gri
 - Handles component lifecycle and cleanup
 - Supports event callbacks for row interactions
 - Uses `DotNetObjectReference` for JavaScript-to-C# callbacks
+- Can work with either interop layer depending on configuration
 
 #### 3. **Dependencies** (`wwwroot/index.html`)
 
 - AG Grid Community v34.1.2 from CDN
 - Quartz theme CSS for modern styling
-- Custom interop JavaScript
+- Multiple custom interop JavaScript files
 
 ### How to Use AG Grid Integration
 
@@ -196,33 +206,49 @@ This application uses **IJSRuntime with Custom JavaScript Functions** for AG Gri
 #### With Event Handling
 
 ```razor
-<AgGrid @ref="gridRef"
-        ContainerId="employee-grid"
-        RowData="employees"
-        ColumnDefs="columnDefs"
+<!-- Users grid with comprehensive data -->
+<AgGrid @ref="usersGridRef"
+        ContainerId="users-grid"
+        RowData="users"
+        ColumnDefs="userColumnDefs"
         EnableSelection="true"
         SelectionMode="single"
-        OnRowClicked="HandleRowClick"
+        OnRowClicked="HandleUserRowClick"
         OnSelectionChanged="HandleSelectionChange" />
 
 @code {
-    private AgGrid? gridRef;
-    private object[]? employees;
-    private object[] columnDefs = new object[]
+    private AgGrid? usersGridRef;
+    private object[]? users;
+
+    private object[] userColumnDefs = new object[]
     {
-        new { field = "name", headerName = "Name", sortable = true },
+        new { field = "id", headerName = "ID", width = 100 },
+        new { field = "fullName", headerName = "Full Name", sortable = true },
         new { field = "email", headerName = "Email", filter = true },
-        new { field = "department", headerName = "Department" }
+        new { field = "roles", headerName = "Roles",
+              cellRenderer = "params => params.value ? params.value.join(', ') : ''" },
+        new { field = "license", headerName = "License", filter = true },
+        new { field = "status", headerName = "Status",
+              cellStyle = "params => params.value === 'Active' ? {color: 'green'} : params.value === 'Suspended' ? {color: 'red'} : {color: 'orange'}" },
+        new { field = "lastActive", headerName = "Last Active",
+              valueFormatter = "params => new Date(params.value).toLocaleDateString()" },
+        new { field = "invitedBy", headerName = "Invited By" }
     };
 
-    private void HandleRowClick(object rowData)
+    protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine($"Row clicked: {rowData}");
+        // Load users from JSON file
+        users = await Http.GetFromJsonAsync<object[]>("data/users.json");
+    }
+
+    private void HandleUserRowClick(object rowData)
+    {
+        Console.WriteLine($"User row clicked: {rowData}");
     }
 
     private void HandleSelectionChange(object[] selectedRows)
     {
-        Console.WriteLine($"Selected {selectedRows.Length} rows");
+        Console.WriteLine($"Selected {selectedRows.Length} users");
     }
 }
 ```
@@ -256,10 +282,10 @@ This application uses **IJSRuntime with Custom JavaScript Functions** for AG Gri
 
 ### JS Interop Implementation Details
 
-#### JavaScript Side (`ag-grid-interop.js`)
+#### JavaScript Side (`users-interop.js`)
 
 ```javascript
-window.agGridInterop = {
+window.usersInterop = {
   grids: new Map(), // Manages multiple grid instances
 
   createGrid: function (containerId, gridOptions, dotNetRef) {
@@ -284,6 +310,7 @@ window.agGridInterop = {
 @inject IJSRuntime JSRuntime
 
 @code {
+    [Parameter] public string InteropNamespace { get; set; } = "usersInterop";
     private DotNetObjectReference<AgGrid>? dotNetRef;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -292,9 +319,9 @@ window.agGridInterop = {
         {
             dotNetRef = DotNetObjectReference.Create(this);
 
-            // Call JavaScript function
+            // Call JavaScript function with configurable namespace
             await JSRuntime.InvokeAsync<bool>(
-                "agGridInterop.createGrid",
+                $"{InteropNamespace}.createGrid",
                 ContainerId,
                 gridOptions,
                 dotNetRef);
@@ -317,7 +344,19 @@ window.agGridInterop = {
 - **C# → JS**: `JSRuntime.InvokeAsync()` calls JavaScript functions
 - **JS → C#**: `dotNetRef.invokeMethodAsync()` calls C# methods marked with `[JSInvokable]`
 
-#### 2. Object Reference Management
+#### 2. Multiple Interop Namespaces
+
+The project supports multiple JavaScript interop namespaces for different use cases:
+
+```csharp
+// Use users interop (default)
+await JSRuntime.InvokeAsync<bool>("usersInterop.createGrid", ...);
+
+// Use users-specific interop
+await JSRuntime.InvokeAsync<bool>("usersInterop.createGrid", ...);
+```
+
+#### 3. Object Reference Management
 
 ```csharp
 // Create reference for JavaScript callbacks
@@ -330,10 +369,11 @@ public async ValueTask DisposeAsync()
 }
 ```
 
-#### 3. Grid Instance Management
+#### 4. Grid Instance Management
 
 ```javascript
-// JavaScript manages multiple grid instances
+// The interop namespace manages grid instances
+// usersInterop.grids stores all grid instances
 grids: new Map(),
 
 createGrid: function (containerId, gridOptions, dotNetRef) {
@@ -356,9 +396,53 @@ createGrid: function (containerId, gridOptions, dotNetRef) {
 
 1. **Always use `@ref`** to get component reference for programmatic control
 2. **Handle disposal** - Component implements `IAsyncDisposable`
-3. **Unique ContainerIds** - Each grid needs a unique container ID
-4. **Error handling** - JavaScript functions include try-catch blocks
-5. **Async patterns** - All JS interop calls are async
+3. **Unique ContainerIds** - Each grid needs a unique container ID across all interop namespaces
+4. **Choose appropriate interop** - Use `usersInterop` for user management grids, `agGridInterop` for general grids
+5. **Error handling** - JavaScript functions include try-catch blocks
+6. **Async patterns** - All JS interop calls are async
+7. **Namespace isolation** - Different interop namespaces maintain separate grid instance collections
+
+## Data Structure
+
+### User Management Dataset
+
+The application includes a comprehensive user dataset (`wwwroot/data/users.json`) with 40 superhero-themed records featuring:
+
+#### User Properties
+
+- **ID**: Unique identifier (format: `u-1001` to `u-1040`)
+- **Full Name**: Complete user name
+- **Roles**: Array of role assignments (admin, manager, field, analyst, tech, security, etc.)
+- **License**: Tier level (Enterprise, Field Level, Standard)
+- **Email**: Contact information with themed domains
+- **Last Active**: ISO 8601 timestamp of last activity
+- **Status**: Current state (Active, Inactive, Suspended)
+- **Invited By**: User who sent the invitation
+- **Avatar URL**: Profile image (currently null for all users)
+
+#### Sample User Record
+
+```json
+{
+  "id": "u-1003",
+  "fullName": "Bruce Wayne",
+  "roles": ["admin", "manager"],
+  "license": "Enterprise",
+  "email": "bwayne@wayneenterprises.com",
+  "lastActive": "2025-11-08T22:45:00Z",
+  "status": "Active",
+  "invitedBy": "Alfred Pennyworth",
+  "avatarUrl": null
+}
+```
+
+#### Data Distribution
+
+- **40 total users** across various organizational roles
+- **3 status types**: Active (30 users), Inactive (7 users), Suspended (3 users)
+- **3 license tiers**: Enterprise (4 users), Field Level (16 users), Standard (20 users)
+- **Diverse role assignments**: From trainees to department heads and specialists
+- **Realistic organizational hierarchy** with invitation relationships
 
 ## Features Overview
 
@@ -371,7 +455,11 @@ createGrid: function (containerId, gridOptions, dotNetRef) {
 
 ### Grid Demo (`/grid-demo`)
 
-- AG Grid integration with sample employee data
+- AG Grid integration with comprehensive user management data
+- 40 superhero-themed user records with realistic organizational structure
+- User status tracking (Active, Inactive, Suspended)
+- Role-based access control visualization (admin, manager, field, analyst, etc.)
+- License tier management (Enterprise, Field Level, Standard)
 - Dynamic data loading with loading indicators
 - Row selection and click handling
 - Add/remove rows functionality
