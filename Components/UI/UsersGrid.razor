@@ -47,8 +47,9 @@ else if (isLoading)
 }
 else
 {
-    <!-- Quick Filter Search Box -->
+    <!-- Search and Filter Controls -->
     <div class="mb-4 flex items-center gap-4">
+        <!-- Search Box -->
         <div class="flex-1 max-w-md">
             <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -60,7 +61,7 @@ else
                     type="text"
                     @bind="quickFilterText"
                     @oninput="OnQuickFilterChanged"
-                    placeholder="Search all columns..."
+                    placeholder="Search..."
                     class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
                 @if (!string.IsNullOrEmpty(quickFilterText))
@@ -77,19 +78,58 @@ else
             </div>
         </div>
 
-        <!-- Grid Actions -->
-        <div class="flex items-center gap-2">
+        <!-- Status Filter Dropdown -->
+        <div class="relative">
             <button
-                @onclick="ClearAllFilters"
-                class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Clear Filters
+                @onclick="ToggleStatusDropdown"
+                class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                type="button">
+                <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z"></path>
+                </svg>
+                Filters (@GetActiveFilterCount())
+                <svg class="ml-2 -mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
             </button>
-            <button
-                @onclick="AutoSizeColumns"
-                class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Auto Size
-            </button>
+
+            @if (showStatusDropdown)
+            {
+                <div class="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                    <div class="py-1">
+                        <div class="px-4 py-2 text-sm font-medium text-gray-900 border-b border-gray-200">
+                            Filter by Status
+                        </div>
+                        @foreach (var status in statusOptions)
+                        {
+                            <label class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked="@GetStatusChecked(status)"
+                                    @onchange="@(e => OnStatusFilterChanged(status, (bool)e.Value!))"
+                                    class="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                />
+                                @status
+                            </label>
+                        }
+                        <div class="border-t border-gray-200 px-4 py-2">
+                            <button
+                                @onclick="ClearStatusFilters"
+                                class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                Clear Status Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
+
+        <!-- Clear Filters Button -->
+        <button
+            @onclick="ClearAllFilters"
+            class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            Clear filters
+        </button>
     </div>
 
     <div id="@ContainerId" class="ag-theme-quartz @GetGridContainerClass()" style="@GetGridContainerStyle()"></div>
@@ -113,6 +153,9 @@ else
     private object[]? usersData;
     private string quickFilterText = string.Empty;
     private System.Threading.Timer? debounceTimer;
+    private string[] selectedStatusFilters = Array.Empty<string>();
+    private readonly string[] statusOptions = { "Active", "Inactive", "Suspended", "Archived" };
+    private bool showStatusDropdown = false;
 
     private object[] columnDefs = new object[]
     {
@@ -195,6 +238,9 @@ else
             {
                 await InitializeGrid();
             }
+
+            // Add click outside handler for dropdown
+            await JSRuntime.InvokeVoidAsync("usersInterop.setupDropdownHandler", ContainerId, dotNetRef);
         }
     }
 
@@ -468,7 +514,8 @@ else
                 overlayNoRowsTemplate = "<span class=\"ag-overlay-no-rows-center\">No data available</span>",
                 // Accessibility and performance improvements
                 maintainColumnOrder = true,
-                suppressColumnVirtualisation = false
+                suppressColumnVirtualisation = false,
+                // Remove external filter - not reliable in Community Edition
                 // getRowId will be handled by JS interop
             };
 
@@ -609,11 +656,108 @@ else
         debounceTimer = null;
 
         quickFilterText = string.Empty;
+        selectedStatusFilters = Array.Empty<string>();
+
         if (isGridInitialized)
         {
             await JSRuntime.InvokeVoidAsync("usersInterop.clearAllFilters", ContainerId);
+
+            // Refresh data to show all records
+            if (usersData != null)
+            {
+                await JSRuntime.InvokeVoidAsync("usersInterop.setRowData", ContainerId, usersData);
+            }
         }
     }
+
+    private void ToggleStatusDropdown()
+    {
+        showStatusDropdown = !showStatusDropdown;
+    }
+
+    private bool GetStatusChecked(string status)
+    {
+        return selectedStatusFilters.Contains(status);
+    }
+
+    private async Task OnStatusFilterChanged(string status, bool isChecked)
+    {
+        if (isChecked)
+        {
+            selectedStatusFilters = selectedStatusFilters.Append(status).ToArray();
+        }
+        else
+        {
+            selectedStatusFilters = selectedStatusFilters.Where(s => s != status).ToArray();
+        }
+
+        await ApplyStatusFilter();
+    }
+
+    private async Task ClearStatusFilters()
+    {
+        selectedStatusFilters = Array.Empty<string>();
+        showStatusDropdown = false;
+        await ApplyStatusFilter();
+    }
+
+    private async Task ApplyStatusFilter()
+    {
+        if (isGridInitialized && usersData != null)
+        {
+            // Filter data on client side before passing to grid (Community Edition compatible)
+            var filteredData = FilterUserData(usersData);
+            await JSRuntime.InvokeVoidAsync("usersInterop.setRowData", ContainerId, filteredData);
+        }
+    }
+
+    private object[] FilterUserData(object[] data)
+    {
+        if (selectedStatusFilters.Length == 0)
+        {
+            return data; // No status filter, return all data
+        }
+
+        var filteredList = new List<object>();
+
+        foreach (var item in data)
+        {
+            // Convert to JsonElement to access properties
+            if (item is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.Object)
+            {
+                if (jsonElement.TryGetProperty("status", out var statusProperty))
+                {
+                    var status = statusProperty.GetString();
+                    if (status != null && selectedStatusFilters.Contains(status))
+                    {
+                        filteredList.Add(item);
+                    }
+                }
+            }
+        }
+
+        return filteredList.ToArray();
+    }
+
+    private int GetActiveFilterCount()
+    {
+        var count = 0;
+        if (!string.IsNullOrEmpty(quickFilterText)) count++;
+        if (selectedStatusFilters.Length > 0) count++;
+        return count;
+    }
+
+    [JSInvokable]
+    public void CloseStatusDropdown()
+    {
+        if (showStatusDropdown)
+        {
+            showStatusDropdown = false;
+            StateHasChanged();
+        }
+    }
+
+
 
     private async Task AutoSizeColumns()
     {

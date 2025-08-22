@@ -220,6 +220,8 @@ window.usersInterop = {
         };
       }
 
+      // External filtering removed - using client-side data filtering instead for Community Edition compatibility
+
       // Remove deprecated v32 options that cause warnings in v33
       delete gridOptions.suppressMenuHide;
       delete gridOptions.suppressCellSelection;
@@ -338,9 +340,18 @@ window.usersInterop = {
         gridApi.destroy();
         this.grids.delete(containerId);
 
-        // Clean up the container
+        // Clean up the container and event listeners
         const container = document.getElementById(containerId);
         if (container) {
+          // Remove click handler if it exists
+          if (container.clickHandler) {
+            document.removeEventListener('click', container.clickHandler);
+            delete container.clickHandler;
+          }
+          // Clean up dotNetRef
+          if (container.dotNetRef) {
+            delete container.dotNetRef;
+          }
           container.innerHTML = '';
         }
 
@@ -412,8 +423,33 @@ window.usersInterop = {
         // Clear quick filter
         gridApi.setGridOption('quickFilterText', '');
 
-        // Clear all column filters
-        gridApi.setFilterModel(null);
+        // Status filters are handled client-side now
+
+        // Clear all column filters using Community Edition compatible method
+        try {
+          gridApi.setFilterModel(null);
+        } catch (err) {
+          // If setFilterModel fails (Enterprise feature), try alternative
+          console.warn(
+            'setFilterModel not available, clearing individual filters'
+          );
+          const columns = gridApi.getColumns();
+          if (columns) {
+            columns.forEach(column => {
+              try {
+                const filter = gridApi.getFilterInstance(column.getId());
+                if (filter && filter.setModel) {
+                  filter.setModel(null);
+                }
+              } catch (e) {
+                // Ignore individual filter errors
+              }
+            });
+          }
+        }
+
+        // Trigger filter update
+        gridApi.onFilterChanged();
 
         return true;
       }
@@ -452,6 +488,8 @@ window.usersInterop = {
       return false;
     }
   },
+
+  // Set status filter specifically
 
   // Get pagination info
   getPaginationInfo: function (containerId) {
@@ -545,6 +583,44 @@ window.usersInterop = {
     } catch (err) {
       console.error('Error validating grid:', err);
       return false;
+    }
+  },
+
+  // Setup dropdown click outside handler
+  setupDropdownHandler: function (containerId, dotNetRef) {
+    try {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      // Store reference for cleanup
+      container.dotNetRef = dotNetRef;
+
+      // Add click handler to document
+      const clickHandler = function (event) {
+        const dropdownContainer = container.querySelector('.relative');
+        if (dropdownContainer && !dropdownContainer.contains(event.target)) {
+          dotNetRef.invokeMethodAsync('CloseStatusDropdown');
+        }
+      };
+
+      // Store handler for cleanup
+      container.clickHandler = clickHandler;
+      document.addEventListener('click', clickHandler);
+    } catch (err) {
+      console.error('Error setting up dropdown handler:', err);
+    }
+  },
+
+  // Close status dropdown (called from document click handler)
+  closeStatusDropdown: function (containerId) {
+    try {
+      // Find the .NET object reference for this grid
+      const container = document.getElementById(containerId);
+      if (container && container.dotNetRef) {
+        container.dotNetRef.invokeMethodAsync('CloseStatusDropdown');
+      }
+    } catch (err) {
+      console.error('Error closing status dropdown:', err);
     }
   },
 };
