@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-/* global agGrid */
+/* global agGrid, setTimeout */
 
 // Users App JavaScript Interop for Blazor
 window.usersInterop = {
@@ -34,9 +34,30 @@ window.usersInterop = {
         };
       }
 
+      // Ensure we have valid row data to prevent ARIA issues
+      if (!gridOptions.rowData || gridOptions.rowData.length === 0) {
+        gridOptions.rowData = [];
+      }
+
       // Create the grid using the modern API
       const gridApi = agGrid.createGrid(container, gridOptions);
       this.grids.set(containerId, gridApi);
+
+      // Wait for grid to be fully rendered to avoid ARIA issues
+      setTimeout(() => {
+        if (
+          gridApi &&
+          gridApi.getDisplayedRowCount() === 0 &&
+          gridOptions.rowData.length === 0
+        ) {
+          // If no data, ensure proper ARIA structure
+          const gridElement = container.querySelector('[role="grid"]');
+          if (gridElement && !gridElement.querySelector('[role="row"]')) {
+            // Add a placeholder row to satisfy ARIA requirements
+            gridApi.setGridOption('rowData', []);
+          }
+        }
+      }, 100);
 
       console.log(`AG Grid created successfully for container: ${containerId}`);
       return true;

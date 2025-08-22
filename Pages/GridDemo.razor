@@ -3,63 +3,56 @@
 <PageTitle>AG Grid Demo</PageTitle>
 
 <div class="container mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-6">AG Grid Demo</h1>
+    <h1 class="text-3xl font-bold mb-6" tabindex="-1">AG Grid Demo</h1>
 
-    <div class="mb-4 space-x-2">
-        <button @onclick="LoadSampleData"
-                disabled="@isLoadingData"
-                class="@GetLoadButtonClass() font-bold py-2 px-4 rounded transition-colors">
-            @if (isLoadingData)
+    <div class="mb-4 space-x-2 flex flex-wrap items-center gap-2">
+        <button @ref="refreshButton"
+                @onclick="RefreshData"
+                disabled="@isRefreshing"
+                class="@GetRefreshButtonClass() font-bold py-2 px-4 rounded transition-colors">
+            @if (isRefreshing)
             {
                 <span class="inline-flex items-center">
                     <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Loading...
+                    Refreshing...
                 </span>
             }
             else
-            {
-                <text>Load Sample Data (@(rowData?.Length ?? 0) rows)</text>
-            }
-        </button>
-        <button @onclick="ClearData"
-                disabled="@isClearingData"
-                class="@GetClearButtonClass() font-bold py-2 px-4 rounded transition-colors">
-            @if (isClearingData)
             {
                 <span class="inline-flex items-center">
-                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                     </svg>
-                    Clearing...
+                    Refresh Users Data
                 </span>
             }
-            else
-            {
-                <text>Clear Data</text>
-            }
         </button>
-        <button @onclick="AddRandomRow"
-                disabled="@isAddingRow"
-                class="@GetAddButtonClass() font-bold py-2 px-4 rounded transition-colors">
-            @if (isAddingRow)
-            {
-                <span class="inline-flex items-center">
-                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Adding...
+
+        <button @onclick="GetSelectedUsers"
+                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors">
+            <span class="inline-flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Get Selected Users
+            </span>
+        </button>
+
+        <div class="flex items-center space-x-2 ml-4">
+            <label class="flex items-center cursor-pointer">
+                <input type="checkbox" @bind="simulateErrors" class="sr-only">
+                <div class="relative">
+                    <div class="@(simulateErrors ? "bg-blue-600" : "bg-gray-300") w-10 h-6 rounded-full shadow-inner transition-colors"></div>
+                    <div class="@(simulateErrors ? "translate-x-4" : "translate-x-0") absolute w-4 h-4 bg-white rounded-full shadow inset-y-1 left-1 transition-transform"></div>
+                </div>
+                <span class="ml-2 text-sm font-medium text-gray-700">
+                    Simulate Errors (50% chance)
                 </span>
-            }
-            else
-            {
-                <text>Add Random Row</text>
-            }
-        </button>
+            </label>
+        </div>
     </div>
 
     @if (!string.IsNullOrEmpty(statusMessage))
@@ -91,167 +84,86 @@
         </div>
     }
 
-    <AgGrid @ref="agGrid"
-            ContainerId="demo-grid"
-            Height="500px"
-            Width="100%"
-            RowData="rowData"
-            ColumnDefs="columnDefs"
-            EnableSelection="true"
-            SelectionMode="single"
-            OnRowClicked="OnRowClicked"
-            OnSelectionChanged="OnSelectionChanged" />
+    <UsersGrid @ref="usersGrid"
+               ContainerId="users-grid"
+               Height="500px"
+               Width="100%"
+               EnableSelection="true"
+               SelectionMode="single"
+               OnRowClicked="OnRowClicked"
+               OnSelectionChanged="OnSelectionChanged"
+               DataUrl="data/users.json"
+               SimulateErrors="@simulateErrors" />
 </div>
 
 @code {
-    private AgGrid? agGrid;
-    private object[]? rowData;
-    private object[]? columnDefs;
+    private UsersGrid? usersGrid;
+    private ElementReference refreshButton;
     private string selectedRowInfo = string.Empty;
     private string statusMessage = string.Empty;
-    private bool isLoadingData = false;
-    private bool isClearingData = false;
-    private bool isAddingRow = false;
+    private bool isRefreshing = false;
+    private bool simulateErrors = true;
     private Timer? statusTimer;
 
     protected override void OnInitialized()
     {
-        // Define column definitions
-        columnDefs = new object[]
-        {
-            new { field = "id", headerName = "ID", width = 80, sortable = true },
-            new { field = "name", headerName = "Name", width = 150, sortable = true, filter = true },
-            new { field = "email", headerName = "Email", width = 200, sortable = true, filter = true },
-            new { field = "age", headerName = "Age", width = 100, sortable = true, filter = "agNumberColumnFilter" },
-            new { field = "department", headerName = "Department", width = 150, sortable = true, filter = true },
-            new { field = "salary", headerName = "Salary", width = 120, sortable = true, filter = "agNumberColumnFilter" }
-        };
-
-        // Don't auto-load data - let user click the button
-        rowData = Array.Empty<object>();
-        ShowStatusMessage("Click 'Load Sample Data' to populate the grid with employee records", "info");
+        ShowStatusMessage("Users data will be automatically loaded from the server", "info");
     }
 
-    private async Task LoadSampleData()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        isLoadingData = true;
-        ShowStatusMessage("🔄 Generating sample employee data...", "loading");
+        if (firstRender)
+        {
+            // Focus the refresh button instead of letting the title get focus
+            await refreshButton.FocusAsync();
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        isRefreshing = true;
+        ShowStatusMessage("🔄 Refreshing users data from server...", "loading");
         StateHasChanged();
 
         try
         {
-            // Simulate some loading time to show the loading state
-            await Task.Delay(800);
-
-            var random = new Random();
-            var departments = new[] { "Engineering", "Marketing", "Sales", "HR", "Finance", "Operations", "Legal", "Design" };
-            var firstNames = new[] { "John", "Jane", "Bob", "Alice", "Charlie", "Diana", "Eve", "Frank", "Grace", "Henry", "Ivy", "Jack", "Kate", "Liam", "Mia", "Noah", "Olivia", "Paul", "Quinn", "Ruby" };
-            var lastNames = new[] { "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin" };
-
-            // Generate 25 random employees (different each time)
-            rowData = Enumerable.Range(1, 25).Select(i => new
+            if (usersGrid != null)
             {
-                id = i,
-                name = $"{firstNames[random.Next(firstNames.Length)]} {lastNames[random.Next(lastNames.Length)]}",
-                email = $"employee{i}@company.com",
-                age = random.Next(22, 65),
-                department = departments[random.Next(departments.Length)],
-                salary = random.Next(35000, 150000)
-            }).ToArray();
-
-            if (agGrid != null)
-            {
-                await agGrid.UpdateRowData(rowData);
+                await usersGrid.RefreshData();
+                ShowStatusMessage("✅ Users data refreshed successfully!", "success");
             }
-
-            ShowStatusMessage($"✅ Successfully loaded {rowData.Length} employee records!", "success");
         }
         catch (Exception ex)
         {
-            ShowStatusMessage($"❌ Error loading data: {ex.Message}", "error");
+            ShowStatusMessage($"❌ Error refreshing data: {ex.Message}", "error");
         }
         finally
         {
-            isLoadingData = false;
+            isRefreshing = false;
             StateHasChanged();
         }
     }
 
-    private async Task ClearData()
+    private async Task GetSelectedUsers()
     {
-        isClearingData = true;
-        ShowStatusMessage("🔄 Clearing all data...", "loading");
-        StateHasChanged();
-
         try
         {
-            await Task.Delay(300); // Brief delay for visual feedback
-
-            rowData = Array.Empty<object>();
-            if (agGrid != null)
+            if (usersGrid != null)
             {
-                await agGrid.UpdateRowData(rowData);
+                var selectedRows = await usersGrid.GetSelectedRows();
+                if (selectedRows.Length > 0)
+                {
+                    ShowStatusMessage($"✅ Retrieved {selectedRows.Length} selected user(s)", "success");
+                }
+                else
+                {
+                    ShowStatusMessage("ℹ️ No users are currently selected", "info");
+                }
             }
-            selectedRowInfo = string.Empty;
-            ShowStatusMessage("✅ All data cleared successfully!", "success");
         }
         catch (Exception ex)
         {
-            ShowStatusMessage($"❌ Error clearing data: {ex.Message}", "error");
-        }
-        finally
-        {
-            isClearingData = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task AddRandomRow()
-    {
-        isAddingRow = true;
-        ShowStatusMessage("🔄 Adding new employee...", "loading");
-        StateHasChanged();
-
-        try
-        {
-            await Task.Delay(400); // Brief delay for visual feedback
-
-            var random = new Random();
-            var departments = new[] { "Engineering", "Marketing", "Sales", "HR", "Finance", "Operations", "Legal", "Design" };
-            var firstNames = new[] { "Alex", "Sam", "Jordan", "Casey", "Taylor", "Morgan", "Riley", "Avery", "Cameron", "Drew" };
-            var lastNames = new[] { "Thompson", "White", "Harris", "Clark", "Lewis", "Robinson", "Walker", "Perez", "Hall", "Young" };
-
-            var currentData = rowData?.ToList() ?? new List<object>();
-            var newId = currentData.Count + 1;
-
-            var newRow = new
-            {
-                id = newId,
-                name = $"{firstNames[random.Next(firstNames.Length)]} {lastNames[random.Next(lastNames.Length)]}",
-                email = $"newemployee{newId}@company.com",
-                age = random.Next(22, 65),
-                department = departments[random.Next(departments.Length)],
-                salary = random.Next(35000, 150000)
-            };
-
-            currentData.Add(newRow);
-            rowData = currentData.ToArray();
-
-            if (agGrid != null)
-            {
-                await agGrid.UpdateRowData(rowData);
-            }
-
-            ShowStatusMessage($"✅ Added new employee: {newRow.name} ({newRow.department})", "success");
-        }
-        catch (Exception ex)
-        {
-            ShowStatusMessage($"❌ Error adding employee: {ex.Message}", "error");
-        }
-        finally
-        {
-            isAddingRow = false;
-            StateHasChanged();
+            ShowStatusMessage($"❌ Error getting selected users: {ex.Message}", "error");
         }
     }
 
@@ -298,25 +210,11 @@
         }
     }
 
-    private string GetLoadButtonClass()
+    private string GetRefreshButtonClass()
     {
-        return isLoadingData
+        return isRefreshing
             ? "bg-blue-400 cursor-not-allowed text-white"
             : "bg-blue-500 hover:bg-blue-700 text-white";
-    }
-
-    private string GetClearButtonClass()
-    {
-        return isClearingData
-            ? "bg-red-400 cursor-not-allowed text-white"
-            : "bg-red-500 hover:bg-red-700 text-white";
-    }
-
-    private string GetAddButtonClass()
-    {
-        return isAddingRow
-            ? "bg-green-400 cursor-not-allowed text-white"
-            : "bg-green-500 hover:bg-green-700 text-white";
     }
 
     private string GetStatusMessageClass()

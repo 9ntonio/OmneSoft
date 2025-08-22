@@ -1,0 +1,419 @@
+@using Microsoft.JSInterop
+@using System.Net.Http.Json
+@using System.Text.Json
+@using OmneSoft.Services
+@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
+@inject HttpClient HttpClient
+@inject IAppStateService AppState
+
+@if (errorState != null)
+{
+    <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-4">
+        <div class="flex items-center mb-4">
+            <svg class="w-6 h-6 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+            <h3 class="text-lg font-semibold text-red-800">Unable to Load Users</h3>
+        </div>
+
+        <div class="mb-4">
+            <p class="text-red-700 mb-2">@errorState.Message</p>
+            <p class="text-red-600 text-sm">@errorState.Details</p>
+        </div>
+
+        <button @onclick="RetryLoadUsers"
+                disabled="@isLoading"
+                class="@GetRetryButtonClass() font-medium py-2 px-4 rounded-lg transition-colors">
+            @if (isLoading)
+            {
+                <span class="inline-flex items-center">
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Retrying...
+                </span>
+            }
+            else
+            {
+                <span class="inline-flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    @errorState.ActionText
+                </span>
+            }
+        </button>
+    </div>
+}
+else if (isLoading)
+{
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-4">
+        <div class="flex items-center">
+            <svg class="animate-spin w-6 h-6 text-blue-600 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-blue-800 font-medium">Loading...</span>
+        </div>
+    </div>
+}
+
+@if (errorState == null && !isLoading && (usersData != null || isGridInitialized))
+{
+    <div id="@ContainerId"
+         class="ag-theme-quartz"
+         style="height: @Height; width: @Width;"
+         role="application"
+         aria-label="Users data grid">
+    </div>
+}
+else if (errorState == null && !isLoading && usersData == null)
+{
+    <!-- Show a message when no data is available -->
+    <div class="ag-theme-quartz" style="height: @Height; width: @Width; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;">
+        <div class="flex items-center justify-center h-full">
+            <span class="text-gray-500">No data available</span>
+        </div>
+    </div>
+}
+else if (errorState == null && isLoading)
+{
+    <!-- Placeholder for grid while loading -->
+    <div class="ag-theme-quartz" style="height: @Height; width: @Width; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;">
+        <div class="d-flex align-items-center justify-content-center h-100">
+            <span class="text-muted">Preparing grid...</span>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string ContainerId { get; set; } = Guid.NewGuid().ToString();
+    [Parameter] public string Height { get; set; } = "500px";
+    [Parameter] public string Width { get; set; } = "100%";
+    [Parameter] public EventCallback<object> OnRowClicked { get; set; }
+    [Parameter] public EventCallback<object[]> OnSelectionChanged { get; set; }
+    [Parameter] public bool EnableSelection { get; set; } = true;
+    [Parameter] public string SelectionMode { get; set; } = "single";
+    [Parameter] public string DataUrl { get; set; } = "data/users.json";
+    [Parameter] public bool SimulateErrors { get; set; } = true;
+
+    private DotNetObjectReference<UsersGrid>? dotNetRef;
+    private bool isGridInitialized = false;
+    private bool isLoading = false;
+    private ErrorState? errorState = null;
+    private object[]? usersData;
+
+    private object[] columnDefs = new object[]
+    {
+        new { field = "id", headerName = "ID", width = 100, sortable = true, filter = true },
+        new { field = "fullName", headerName = "Full Name", width = 180, sortable = true, filter = true },
+        new { field = "email", headerName = "Email", width = 220, sortable = true, filter = true },
+        new { field = "roles", headerName = "Roles", width = 200, sortable = false, filter = true,
+              cellRenderer = "function(params) { return params.value ? params.value.join(', ') : ''; }" },
+        new { field = "license", headerName = "License", width = 120, sortable = true, filter = true },
+        new { field = "status", headerName = "Status", width = 100, sortable = true, filter = true,
+              cellRenderer = "function(params) { " +
+                  "const status = params.value; " +
+                  "const color = status === 'Active' ? 'green' : status === 'Inactive' ? 'orange' : 'red'; " +
+                  "return `<span style='color: ${color}; font-weight: bold;'>${status}</span>`; " +
+              "}" },
+        new { field = "lastActive", headerName = "Last Active", width = 150, sortable = true, filter = "agDateColumnFilter",
+              cellRenderer = "function(params) { " +
+                  "if (!params.value) return ''; " +
+                  "const date = new Date(params.value); " +
+                  "return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); " +
+              "}" },
+        new { field = "invitedBy", headerName = "Invited By", width = 150, sortable = true, filter = true }
+    };
+
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadUsersAndInitializeGrid();
+        }
+    }
+
+    private async Task LoadUsersAndInitializeGrid()
+    {
+        await LoadUsers();
+        if (errorState == null && usersData != null)
+        {
+            // Force a re-render to show the grid container
+            StateHasChanged();
+            // Small delay to ensure DOM is updated
+            await Task.Delay(50);
+            await InitializeGrid();
+        }
+    }
+
+    private async Task LoadUsers()
+    {
+        isLoading = true;
+        errorState = null;
+        StateHasChanged();
+
+        try
+        {
+            // Add 1 second delay to simulate loading time
+            await Task.Delay(1000);
+
+            // Simulate random errors 50% of the time for testing (when enabled)
+            if (SimulateErrors)
+            {
+                var random = new Random();
+                if (random.Next(0, 2) == 0) // 50% chance
+                {
+                    var errorType = random.Next(0, 5);
+                    switch (errorType)
+                    {
+                        case 0:
+                            throw new HttpRequestException("Simulated network error for testing");
+                        case 1:
+                            throw new TaskCanceledException("Simulated timeout for testing");
+                        case 2:
+                            throw new JsonException("Simulated JSON parsing error for testing");
+                        case 3:
+                            // Simulate 404 by using a fake URL
+                            var fakeResponse = await HttpClient.GetAsync("data/nonexistent.json");
+                            break;
+                        case 4:
+                            throw new Exception("Simulated unexpected error for testing");
+                    }
+                }
+            }
+
+            var response = await HttpClient.GetAsync(DataUrl);
+
+            switch (response.StatusCode)
+            {
+                case System.Net.HttpStatusCode.OK:
+                    var jsonContent = await response.Content.ReadAsStringAsync();
+                    usersData = JsonSerializer.Deserialize<object[]>(jsonContent, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    break;
+
+                case System.Net.HttpStatusCode.NotFound:
+                    errorState = new ErrorState
+                    {
+                        Message = "Users data file not found",
+                        Details = $"The file '{DataUrl}' could not be located on the server.",
+                        ActionText = "Retry Loading"
+                    };
+                    break;
+
+                case System.Net.HttpStatusCode.Unauthorized:
+                    errorState = new ErrorState
+                    {
+                        Message = "Access denied",
+                        Details = "You don't have permission to access the users data.",
+                        ActionText = "Try Again"
+                    };
+                    break;
+
+                case System.Net.HttpStatusCode.InternalServerError:
+                    errorState = new ErrorState
+                    {
+                        Message = "Server error occurred",
+                        Details = "The server encountered an error while processing your request.",
+                        ActionText = "Retry"
+                    };
+                    break;
+
+                case System.Net.HttpStatusCode.RequestTimeout:
+                    errorState = new ErrorState
+                    {
+                        Message = "Request timed out",
+                        Details = "The server took too long to respond. Please check your connection.",
+                        ActionText = "Try Again"
+                    };
+                    break;
+
+                default:
+                    errorState = new ErrorState
+                    {
+                        Message = $"Unexpected error ({(int)response.StatusCode})",
+                        Details = $"Status: {response.StatusCode}. Please try again or contact support.",
+                        ActionText = "Retry"
+                    };
+                    break;
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorState = new ErrorState
+            {
+                Message = "Network connection error",
+                Details = "Unable to connect to the server. Please check your internet connection.",
+                ActionText = "Retry Connection"
+            };
+        }
+        catch (TaskCanceledException)
+        {
+            errorState = new ErrorState
+            {
+                Message = "Request cancelled",
+                Details = "The request was cancelled or timed out. Please try again.",
+                ActionText = "Try Again"
+            };
+        }
+        catch (JsonException)
+        {
+            errorState = new ErrorState
+            {
+                Message = "Data format error",
+                Details = "The users data file contains invalid formatting.",
+                ActionText = "Reload Data"
+            };
+        }
+        catch (Exception)
+        {
+            errorState = new ErrorState
+            {
+                Message = "Unexpected error occurred",
+                Details = "An unexpected error occurred while loading users data.",
+                ActionText = "Try Again"
+            };
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task InitializeGrid()
+    {
+        try
+        {
+            dotNetRef = DotNetObjectReference.Create(this);
+
+            // Ensure we have valid data to prevent ARIA issues
+            var validRowData = usersData ?? Array.Empty<object>();
+
+            var gridOptions = new
+            {
+                columnDefs = columnDefs,
+                rowData = validRowData,
+                rowSelection = EnableSelection ? new { mode = SelectionMode == "single" ? "singleRow" : "multiRow" } : (object?)null,
+                animateRows = true,
+                theme = "legacy",
+                suppressNoRowsOverlay = validRowData.Length == 0, // Suppress overlay for empty data
+                defaultColDef = new
+                {
+                    sortable = true,
+                    filter = true,
+                    resizable = true,
+                    flex = 1,
+                    minWidth = 100
+                }
+            };
+
+            isGridInitialized = await JSRuntime.InvokeAsync<bool>("usersInterop.createGrid", ContainerId, gridOptions, dotNetRef);
+
+            if (isGridInitialized)
+            {
+                await Task.Delay(100);
+                await JSRuntime.InvokeVoidAsync("usersInterop.sizeToFit", ContainerId);
+            }
+        }
+        catch (Exception)
+        {
+            errorState = new ErrorState
+            {
+                Message = "Grid initialization failed",
+                Details = "Failed to initialize the data grid component.",
+                ActionText = "Reload Grid"
+            };
+            StateHasChanged();
+        }
+    }
+
+    private async Task RetryLoadUsers()
+    {
+        await LoadUsersAndInitializeGrid();
+    }
+
+    public async Task RefreshData()
+    {
+        await LoadUsers();
+        if (errorState == null && usersData != null)
+        {
+            if (isGridInitialized)
+            {
+                await JSRuntime.InvokeVoidAsync("usersInterop.setRowData", ContainerId, usersData);
+            }
+            else
+            {
+                // Grid container should now be visible, initialize it
+                StateHasChanged();
+                await Task.Delay(50);
+                await InitializeGrid();
+            }
+        }
+    }
+
+    public async Task<object[]> GetSelectedRows()
+    {
+        if (isGridInitialized)
+        {
+            return await JSRuntime.InvokeAsync<object[]>("usersInterop.getSelectedRows", ContainerId);
+        }
+        return Array.Empty<object>();
+    }
+
+    public async Task SizeToFit()
+    {
+        if (isGridInitialized)
+        {
+            await JSRuntime.InvokeVoidAsync("usersInterop.sizeToFit", ContainerId);
+        }
+    }
+
+    [JSInvokable]
+    public async Task HandleRowClicked(object rowData)
+    {
+        if (OnRowClicked.HasDelegate)
+        {
+            await OnRowClicked.InvokeAsync(rowData);
+        }
+    }
+
+    [JSInvokable]
+    public async Task HandleSelectionChanged(object[] selectedRows)
+    {
+        if (OnSelectionChanged.HasDelegate)
+        {
+            await OnSelectionChanged.InvokeAsync(selectedRows);
+        }
+    }
+
+    private string GetRetryButtonClass()
+    {
+        return isLoading
+            ? "bg-gray-400 cursor-not-allowed text-white"
+            : "bg-red-600 hover:bg-red-700 text-white";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (isGridInitialized)
+        {
+            await JSRuntime.InvokeVoidAsync("usersInterop.destroyGrid", ContainerId);
+        }
+        dotNetRef?.Dispose();
+    }
+
+    private class ErrorState
+    {
+        public string Message { get; set; } = string.Empty;
+        public string Details { get; set; } = string.Empty;
+        public string ActionText { get; set; } = string.Empty;
+    }
+}
