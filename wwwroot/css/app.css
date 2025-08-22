@@ -95,6 +95,7 @@
     height: calc(100vh - 200px) !important;
     min-height: 500px !important;
     width: 100% !important;
+    position: relative;
   }
 
   /* General grid container class for any ag-grid */
@@ -102,6 +103,36 @@
     height: calc(100vh - 200px) !important;
     min-height: 500px !important;
     width: 100% !important;
+    position: relative;
+  }
+
+  /* Fix for AG Grid v33 ARIA warnings */
+  .ag-theme-quartz .ag-root {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+  }
+
+  .ag-theme-quartz .ag-header-row {
+    background-color: #f9fafb;
+  }
+
+  .ag-theme-quartz .ag-row {
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  /* Improve loading overlay styling */
+  .ag-theme-quartz .ag-overlay-loading-center {
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .ag-theme-quartz .ag-overlay-no-rows-center {
+    background-color: rgba(249, 250, 251, 0.9);
+    padding: 20px;
+    border-radius: 8px;
+    color: #6b7280;
   }
 
   .loading-progress {

@@ -356,19 +356,24 @@ else
                 columnDefs = columnDefs,
                 rowData = validRowData,
                 domLayout = "normal",
-                rowSelection = EnableSelection ? SelectionMode : "none",
-                suppressRowClickSelection = false,
-                suppressCellSelection = true,
-                animateRows = true,
-                enableRangeSelection = false,
-                suppressMenuHide = true,
+                // Use v33 Community Edition compatible selection API
+                rowSelection = EnableSelection ? SelectionMode : "none", // Will be converted to singleRow/multiRow in JS
                 defaultColDef = new
                 {
                     resizable = true,
                     sortable = true,
                     filter = true,
                     minWidth = 100
-                }
+                },
+                // v33 Community Edition compatible options
+                suppressLoadingOverlay = false,
+                suppressNoRowsOverlay = false,
+                overlayLoadingTemplate = "<span class=\"ag-overlay-loading-center\">Loading...</span>",
+                overlayNoRowsTemplate = "<span class=\"ag-overlay-no-rows-center\">No data available</span>",
+                // Accessibility and performance improvements
+                maintainColumnOrder = true,
+                suppressColumnVirtualisation = false
+                // getRowId will be handled by JS interop
             };
 
             // Ensure DOM is ready and container exists
@@ -380,6 +385,9 @@ else
                 throw new InvalidOperationException($"Container element '{ContainerId}' not found in DOM");
             }
 
+            // Ensure container has proper dimensions for AG Grid v33
+            await JSRuntime.InvokeVoidAsync("eval", $"const el = document.getElementById('{ContainerId}'); if(el) {{ el.style.height = el.style.height || '500px'; el.style.width = el.style.width || '100%'; }}");
+
             isGridInitialized = await JSRuntime.InvokeAsync<bool>("usersInterop.createGrid", ContainerId, gridOptions, dotNetRef);
 
             System.Console.WriteLine($"Grid initialized: {isGridInitialized}");
@@ -388,6 +396,10 @@ else
             {
                 await Task.Delay(200);
                 await JSRuntime.InvokeVoidAsync("usersInterop.sizeToFit", ContainerId);
+
+                // Validate grid structure and fix ARIA issues
+                await Task.Delay(100);
+                await JSRuntime.InvokeVoidAsync("usersInterop.validateGrid", ContainerId);
             }
         }
         catch (Exception ex)
