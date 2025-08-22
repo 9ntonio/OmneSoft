@@ -3,6 +3,7 @@
 @using System.Text.Json
 @using OmneSoft.Services
 @implements IAsyncDisposable
+@implements IDisposable
 @inject IJSRuntime JSRuntime
 @inject HttpClient HttpClient
 @inject IAppStateService AppState
@@ -112,10 +113,20 @@ else
 
 
 
+    private bool previousSimulateErrors = false;
+    private static int errorCounter = 0; // Static counter to cycle through error types
+
+    protected override void OnInitialized()
+    {
+        // Subscribe to global state changes for automatic re-rendering
+        AppState.OnChange += StateHasChanged;
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            previousSimulateErrors = SimulateErrors;
             await LoadUsers();
             if (errorState == null)
             {
@@ -124,9 +135,68 @@ else
         }
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        // Check if SimulateErrors parameter changed after initial render
+        if (previousSimulateErrors != SimulateErrors && isGridInitialized)
+        {
+            previousSimulateErrors = SimulateErrors;
+
+            // Reset error counter when switching off error simulation
+            if (!SimulateErrors)
+            {
+                errorCounter = 0;
+
+                // Clean slate when switching off error simulation - destroy and recreate grid
+                if (isGridInitialized)
+                {
+                    try
+                    {
+                        await JSRuntime.InvokeVoidAsync("usersInterop.destroyGrid", ContainerId);
+                        isGridInitialized = false;
+                    }
+                    catch
+                    {
+                        // Ignore cleanup errors
+                        isGridInitialized = false;
+                    }
+                }
+            }
+
+            // Reload data with new simulation setting
+            await LoadUsers();
+
+            // Handle grid initialization/update after loading
+            if (errorState == null && usersData != null)
+            {
+                if (isGridInitialized)
+                {
+                    // Update existing grid
+                    await JSRuntime.InvokeVoidAsync("usersInterop.setRowData", ContainerId, usersData);
+                }
+                else
+                {
+                    // Initialize grid if not already done
+                    StateHasChanged(); // Update UI first
+                    await Task.Delay(100); // Longer delay for DOM cleanup/update
+                    await InitializeGrid();
+                }
+            }
+
+            // Trigger UI update
+            StateHasChanged();
+        }
+        else if (!isGridInitialized)
+        {
+            // Update the tracking variable for first-time initialization
+            previousSimulateErrors = SimulateErrors;
+        }
+    }
+
     private async Task LoadUsers()
     {
-        isLoading = true;
+        isLoading = true;           // Component-specific loading state
+        AppState.SetLoading(true);  // Global loading state for coordination
         errorState = null;
         StateHasChanged();
 
@@ -135,42 +205,44 @@ else
             // Add 1 second delay to simulate loading time
             await Task.Delay(1000);
 
-            // Simulate random errors 50% of the time for testing (when enabled)
+            // Cycle through all 5 error types for testing
             if (SimulateErrors)
             {
-                var random = new Random();
-                if (random.Next(0, 2) == 0) // 50% chance
+                var errorType = errorCounter % 5; // Cycle through 0-4
+                errorCounter++;
+
+                switch (errorType)
                 {
-                    var errorType = random.Next(0, 5);
-                    switch (errorType)
-                    {
-                        case 0:
-                            throw new HttpRequestException("Simulated network error for testing");
-                        case 1:
-                            throw new TaskCanceledException("Simulated timeout for testing");
-                        case 2:
-                            throw new JsonException("Simulated JSON parsing error for testing");
-                        case 3:
-                            // Simulate 404 by using a fake URL - this will be processed below
-                            var response = await HttpClient.GetAsync("data/nonexistent.json");
-                            await ProcessResponse(response);
-                            return;
-                        case 4:
-                            throw new Exception("Simulated unexpected error for testing");
-                    }
+                    case 0:
+                        throw new HttpRequestException("Simulated network connection error");
+                    case 1:
+                        throw new TaskCanceledException("Simulated request timeout");
+                    case 2:
+                        throw new JsonException("Simulated JSON parsing error");
+                    case 3:
+                        // Simulate 404 directly
+                        errorState = new ErrorState
+                        {
+                            Message = "File Not Found (404)",
+                            Details = "The users data file could not be located on the server.",
+                            ActionText = "Retry Loading"
+                        };
+                        return;
+                    case 4:
+                        throw new Exception("Simulated unexpected error");
                 }
             }
 
             // Normal request processing
-            var normalResponse = await HttpClient.GetAsync(DataUrl);
-            await ProcessResponse(normalResponse);
+            var response = await HttpClient.GetAsync(DataUrl);
+            await ProcessResponse(response);
 
         }
         catch (HttpRequestException)
         {
             errorState = new ErrorState
             {
-                Message = "Network connection error",
+                Message = "Network Connection Error",
                 Details = "Unable to connect to the server. Please check your internet connection.",
                 ActionText = "Retry Connection"
             };
@@ -179,8 +251,8 @@ else
         {
             errorState = new ErrorState
             {
-                Message = "Request cancelled",
-                Details = "The request was cancelled or timed out. Please try again.",
+                Message = "Request Timeout",
+                Details = "The request took too long to complete. Please try again.",
                 ActionText = "Try Again"
             };
         }
@@ -188,8 +260,8 @@ else
         {
             errorState = new ErrorState
             {
-                Message = "Data format error",
-                Details = "The users data file contains invalid formatting.",
+                Message = "Data Format Error",
+                Details = "The server returned invalid data that could not be processed.",
                 ActionText = "Reload Data"
             };
         }
@@ -197,14 +269,15 @@ else
         {
             errorState = new ErrorState
             {
-                Message = "Unexpected error occurred",
-                Details = "An unexpected error occurred while loading users data.",
+                Message = "Unexpected Error",
+                Details = "An unexpected error occurred while loading the data.",
                 ActionText = "Try Again"
             };
         }
         finally
         {
-            isLoading = false;
+            isLoading = false;          // Clear component loading state
+            AppState.SetLoading(false); // Clear global loading state
             StateHasChanged();
         }
     }
@@ -224,8 +297,8 @@ else
             case System.Net.HttpStatusCode.NotFound:
                 errorState = new ErrorState
                 {
-                    Message = "Users data file not found",
-                    Details = $"The file '{DataUrl}' could not be located on the server.",
+                    Message = "File Not Found (404)",
+                    Details = "The users data file could not be located on the server.",
                     ActionText = "Retry Loading"
                 };
                 break;
@@ -351,15 +424,19 @@ else
 
     public async Task RefreshData()
     {
-        if (isGridInitialized)
+        // Always reload data from server to pick up new SimulateErrors setting
+        await LoadUsers();
+
+        if (errorState == null)
         {
-            await JSRuntime.InvokeVoidAsync("usersInterop.setRowData", ContainerId, usersData ?? Array.Empty<object>());
-        }
-        else
-        {
-            await LoadUsers();
-            if (errorState == null)
+            if (isGridInitialized)
             {
+                // Update existing grid with new data
+                await JSRuntime.InvokeVoidAsync("usersInterop.setRowData", ContainerId, usersData ?? Array.Empty<object>());
+            }
+            else
+            {
+                // Initialize grid if not already done
                 await InitializeGrid();
             }
         }
@@ -428,13 +505,25 @@ else
         return $"height: {height}; width: {width};";
     }
 
+    public void Dispose()
+    {
+        // Unsubscribe from global state changes to prevent memory leaks
+        AppState.OnChange -= StateHasChanged;
+
+        // Dispose of .NET object reference
+        dotNetRef?.Dispose();
+    }
+
     public async ValueTask DisposeAsync()
     {
+        // Cleanup JS interop resources
         if (isGridInitialized)
         {
             await JSRuntime.InvokeVoidAsync("usersInterop.destroyGrid", ContainerId);
         }
-        dotNetRef?.Dispose();
+
+        // Call synchronous dispose
+        Dispose();
     }
 
     private class ErrorState

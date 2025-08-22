@@ -1,6 +1,9 @@
 @page "/"
+@using OmneSoft.Components.UI
+@using OmneSoft.Services
 @inject IJSRuntime JSRuntime
 @inject IAppStateService AppState
+@implements IDisposable
 @namespace OmneSoft.Pages
 
 <PageTitle>Users - OmneSoft</PageTitle>
@@ -42,7 +45,7 @@
                             <div class="@(simulateErrors ? "translate-x-4" : "translate-x-0") absolute w-4 h-4 bg-white rounded-full shadow inset-y-1 left-1 transition-transform"></div>
                         </div>
                         <span class="ml-2 text-sm font-medium text-gray-700">
-                            Simulate Errors (50% chance)
+                            Simulate Errors (50% chance) - @(simulateErrors ? "ON" : "OFF")
                         </span>
                     </label>
                 </div>
@@ -69,26 +72,29 @@
     private bool simulateErrors = false;
     private bool isRefreshing = false;
 
+    protected override void OnInitialized()
+    {
+        // Subscribe to global state changes for automatic re-rendering
+        AppState.OnChange += StateHasChanged;
+    }
+
     private async Task RefreshData()
     {
-        isRefreshing = true;
-        StateHasChanged();
+        if (usersGrid == null || isRefreshing) return;
+
+        // Set both local and global loading states
+        isRefreshing = true;        // Component-specific loading state
+        AppState.SetLoading(true);  // Global loading state for coordination
 
         try
         {
-            if (usersGrid != null)
-            {
-                await usersGrid.RefreshData();
-            }
-        }
-        catch (Exception)
-        {
-            // Error handling is done within the UsersGrid component
+            await usersGrid.RefreshData();
         }
         finally
         {
-            isRefreshing = false;
-            StateHasChanged();
+            // Clear both loading states
+            isRefreshing = false;       // Clear component loading state
+            AppState.SetLoading(false); // Clear global loading state
         }
     }
 
@@ -107,5 +113,11 @@
         return isRefreshing
             ? "bg-blue-400 cursor-not-allowed text-white"
             : "bg-blue-500 hover:bg-blue-700 text-white";
+    }
+
+    public void Dispose()
+    {
+        // Unsubscribe from global state changes to prevent memory leaks
+        AppState.OnChange -= StateHasChanged;
     }
 }

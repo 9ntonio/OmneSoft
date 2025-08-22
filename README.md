@@ -12,7 +12,7 @@ A modern Blazor WebAssembly application built with .NET 8, featuring comprehensi
 - **User Management Data**: Comprehensive user dataset with 40+ superhero-themed records including roles, licenses, and status tracking
 - **Production-Ready Error Handling**: Comprehensive HTTP error scenarios with user-friendly messages and retry mechanisms
 - **Network Resilience**: Handles connection failures, timeouts, and various server error conditions
-- **Enhanced Error Simulation Testing**: Advanced error simulation system with 5 distinct error scenarios including network failures, timeouts, JSON parsing errors, actual HTTP 404 responses, and unexpected errors with structured control flow and realistic testing capabilities
+- **Error Simulation Testing**: Comprehensive error simulation system cycling through 5 error types with lifecycle-aware parameter change detection, automatic grid data refresh, and clean state transitions
 - **Modern UI Components**: Custom Button and UsersGrid components with Tailwind CSS styling
 - **Enhanced Loading States & User Feedback**: Animated indicators, contextual messages, full-height loading states, and streamlined state management for all async operations
 - **Centralized State Management**: AppStateService with reactive patterns for global application state
@@ -29,7 +29,7 @@ A modern Blazor WebAssembly application built with .NET 8, featuring comprehensi
 - **State Management**: Custom AppStateService with reactive patterns
 - **Dependency Injection**: Built-in .NET DI container with scoped services
 - **Styling**: Tailwind CSS v3.4.17 with PostCSS processing and autoprefixer
-- **Data Grid**: AG Grid Community Edition v33.3.2 (CDN-hosted) with Quartz theme and stable configuration using correct createGrid API
+- **Data Grid**: AG Grid Community Edition v33.3.2 (CDN-hosted) with Quartz theme, fixed-height strategy for reliability, and stable configuration using correct createGrid API
 - **JavaScript Interop**: Custom interop functions for AG Grid v33.3.2 integration using correct createGrid API with simplified grid lifecycle management
 - **HTTP Client**: Configured HttpClient with 30-second timeout
 - **Build Tools**: npm scripts with automated CSS building and .NET integration
@@ -42,23 +42,64 @@ A modern Blazor WebAssembly application built with .NET 8, featuring comprehensi
 
 ### Code Quality & Reliability Improvements
 
-**Recent Error Simulation Enhancements**: The UsersGrid component's error simulation system has been improved with better control flow management and more realistic testing scenarios:
+**Enhanced Error Simulation & Grid Lifecycle System**: The UsersGrid component features a robust error simulation system with intelligent parameter change detection, comprehensive grid lifecycle management, and optimized state transitions:
 
-- **Modern Control Flow**: Uses structured control flow with `switch` statements and `break` patterns, following modern C# best practices for better code readability
-- **Enhanced HTTP Error Testing**: Comprehensive error simulation including actual HTTP requests to non-existent endpoints for realistic 404 testing
-- **Unified Response Processing**: Both successful and error responses are processed through the same HTTP status code handling logic, ensuring consistent behavior
-- **Better Code Maintainability**: Clean, readable code structure with proper error handling patterns, improving long-term maintainability and code review quality
-- **Comprehensive Error Coverage**: 5 distinct error scenarios covering network failures, timeouts, JSON parsing errors, HTTP status codes, and unexpected exceptions
+- **Smart Parameter Detection**: Intelligent detection of `SimulateErrors` parameter changes using `OnParametersSetAsync()` with proper initialization state tracking
+- **Lifecycle-Aware Updates**: Only processes parameter changes after grid initialization to prevent unnecessary operations during component startup
+- **Clean State Transitions**: Complete grid destruction and recreation when switching off error simulation to ensure pristine component state
+- **Extended DOM Update Timing**: 100ms delays for DOM cleanup/update operations to ensure reliable grid initialization after state changes
+- **Automatic Data Refresh**: Grid data automatically refreshes when error simulation mode is toggled, with immediate UI updates via `StateHasChanged()`
+- **Initialization State Tracking**: Maintains `previousSimulateErrors` tracking variable to detect actual parameter changes and prevent redundant operations
+- **Error Counter Management**: Automatic reset of error simulation counter when switching to normal mode for predictable behavior
+- **Comprehensive Error Cycling**: Error simulation cycles through 5 different error types (network, timeout, JSON parsing, 404, unexpected) for thorough testing
+- **Debug Logging**: Console logging for parameter changes, data loading operations, and component lifecycle events to aid in development and troubleshooting
+- **Clean Control Flow**: Streamlined conditional logic with proper finally block execution and resource cleanup
+- **Comprehensive Error Handling**: Built-in handling for network failures, timeouts, JSON parsing errors, HTTP status codes, and unexpected exceptions
+- **Proper Resource Management**: Error simulation ensures proper execution of finally blocks and cleanup of loading states
+- **Grid State Coordination**: Parameter changes trigger appropriate grid updates or complete recreation based on current component state
 
-### AG Grid CSS Optimization
+### AG Grid CSS Optimization & Height Configuration
 
-**Enhanced Grid Container Management**: The application now includes dedicated CSS classes for reliable AG Grid rendering across different environments:
+**Critical AG Grid v33 Community Edition Height Issue**: AG Grid Community Edition v33.3.2 has known issues with percentage-based heights that can cause rendering problems, grid collapse, or incorrect sizing. This application implements a **fixed-height strategy** to ensure reliable grid rendering:
 
-- **Viewport-Based Sizing**: Uses `calc(100vh - 200px)` calculations for dynamic height adjustment based on available screen space
+**Enhanced Grid Container Management**: The application includes dedicated CSS classes and height management for reliable AG Grid rendering:
+
+- **Fixed Height Strategy**: Uses `500px` default height and `calc(100vh - 200px)` for viewport-based sizing instead of percentage heights
+- **Percentage Height Prevention**: Component automatically converts percentage heights to fixed `500px` to prevent AG Grid v33 rendering issues
 - **Reliable Rendering**: `!important` declarations ensure grid dimensions are consistently applied regardless of CSS specificity conflicts
 - **Responsive Design**: Minimum height constraints (`500px`) prevent grid collapse on smaller screens while maintaining usability
 - **Universal Container Class**: `.ag-grid-container` class provides consistent styling for any AG Grid instance in the application
 - **Cross-Browser Compatibility**: Explicit width and height declarations ensure consistent behavior across different browsers and devices
+
+**CSS Implementation:**
+
+```css
+/* Ensure proper grid sizing - no percentages for AG Grid v33 */
+#users-grid {
+  height: calc(100vh - 200px) !important;
+  min-height: 500px !important;
+  width: 100% !important;
+}
+
+.ag-grid-container {
+  height: calc(100vh - 200px) !important;
+  min-height: 500px !important;
+  width: 100% !important;
+}
+```
+
+**Component Height Management:**
+
+```csharp
+// UsersGrid automatically prevents percentage heights
+private string GetGridContainerStyle()
+{
+    // For other grids, ensure no percentage heights
+    var height = Height.Contains("%") ? "500px" : Height;
+    var width = Width.Contains("%") ? "100%" : Width; // Width percentages are OK
+    return $"height: {height}; width: {width};";
+}
+```
 
 ### Performance & Efficiency Optimizations
 
@@ -87,7 +128,8 @@ The application uses a **system font-first approach** (`font-sans` in Tailwind C
 - **Tailwind CSS purging** removes unused styles, dramatically reducing CSS bundle size
 - **PostCSS autoprefixer** ensures cross-browser compatibility without manual vendor prefixes
 - **Automated CSS builds** integrated into .NET build pipeline for seamless development
-- **AG Grid CSS Optimization** with dedicated container classes and viewport-based sizing using `!important` declarations for reliable grid rendering
+- **AG Grid CSS Optimization** with dedicated container classes and fixed-height strategy using `!important` declarations for reliable grid rendering
+- **AG Grid v33 Height Fix** with automatic percentage-to-fixed height conversion to prevent Community Edition rendering issues
 - **Responsive Grid Containers** with `calc(100vh - 200px)` height calculations and minimum height constraints for consistent display across devices
 
 #### JavaScript Efficiency
@@ -147,6 +189,7 @@ Components integrate with the AppStateService using a hybrid approach that combi
 ```csharp
 @using OmneSoft.Services
 @inject IAppStateService AppState
+@implements IDisposable
 
 @code {
     private bool isLoading = false; // Component-specific loading state
@@ -175,7 +218,7 @@ Components integrate with the AppStateService using a hybrid approach that combi
         }
     }
 
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
         // Prevent memory leaks by unsubscribing
         AppState.OnChange -= StateHasChanged;
@@ -189,8 +232,8 @@ The `UsersGrid` component provides flexible configuration options for optimal in
 
 ```csharp
 [Parameter] public string ContainerId { get; set; } = Guid.NewGuid().ToString();
-[Parameter] public string Height { get; set; } = "500px";  // Default fixed height
-[Parameter] public string Width { get; set; } = "100%";
+[Parameter] public string Height { get; set; } = "500px";  // Fixed height (percentages auto-converted)
+[Parameter] public string Width { get; set; } = "100%";   // Width percentages work correctly
 [Parameter] public EventCallback<object> OnRowClicked { get; set; }
 [Parameter] public EventCallback<object[]> OnSelectionChanged { get; set; }
 [Parameter] public bool EnableSelection { get; set; } = true;
@@ -201,9 +244,9 @@ The `UsersGrid` component provides flexible configuration options for optimal in
 
 **Key Parameter Features:**
 
-- **Flexible Height**: Defaults to `500px` but can be customized using any CSS value (px, %, vh, calc(), etc.)
-- **Responsive Width**: Defaults to `100%` for full container width utilization
-- **Error Simulation**: Built-in error simulation for testing and development purposes with 50% chance when enabled
+- **Fixed Height Strategy**: Defaults to `500px` and automatically converts percentage heights to fixed values to prevent AG Grid v33 rendering issues
+- **Responsive Width**: Defaults to `100%` for full container width utilization (width percentages work correctly)
+- **Intelligent Error Simulation**: Real-time error simulation toggle with lifecycle-aware parameter change detection, automatic grid data refresh, and complete grid recreation for clean state transitions
 - **Event Callbacks**: Row click and selection change events for interactive functionality
 - **AG Grid Quartz Theme**: Uses the modern Quartz theme for professional appearance
 
@@ -252,6 +295,18 @@ The `UsersGrid` component demonstrates AppStateService integration with optimize
         {
             isLoading = false;          // Clear component loading state
             AppState.SetLoading(false); // Clear global loading state
+
+            // Initialize grid if data loaded successfully and no error state
+            if (errorState == null && usersData != null && !isGridInitialized)
+            {
+                StateHasChanged(); // Update UI first
+                await Task.Delay(50); // Small delay for DOM update
+                await InitializeGrid();
+            }
+            else
+            {
+                StateHasChanged();
+            }
         }
     }
 
@@ -282,17 +337,25 @@ The `UsersGrid` component demonstrates AppStateService integration with optimize
         }
     }
 
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
         // Prevent memory leaks by unsubscribing
         AppState.OnChange -= StateHasChanged;
 
-        // Cleanup grid resources
+        // Dispose of .NET object reference
+        dotNetRef?.Dispose();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Cleanup JS interop resources
         if (isGridInitialized)
         {
             await JSRuntime.InvokeVoidAsync("usersInterop.destroyGrid", ContainerId);
         }
-        dotNetRef?.Dispose();
+
+        // Call synchronous dispose
+        Dispose();
     }
 }
 ```
@@ -308,6 +371,8 @@ The `UsersGrid` component demonstrates AppStateService integration with optimize
 - **Lifecycle Optimized**: Synchronous initialization for event subscriptions, async only when needed
 - **Resource Management**: Comprehensive disposal patterns for JS interop and .NET object references
 - **Enhanced Refresh Functionality**: Grid state reset ensures clean re-initialization during refresh operations
+- **Automatic Grid Initialization**: Improved finally block logic ensures grid initialization occurs automatically after successful data loading
+- **Debug Traceability**: Console logging for data loading operations provides clear visibility into component lifecycle and async operations
 
 #### Loading State Management Strategy
 
@@ -390,6 +455,73 @@ The application implements an **optimized layout pattern** using Tailwind CSS an
 - **Accessibility Compliance**: Semantic HTML structure with proper heading hierarchy and navigation landmarks
 - **Interactive Controls**: Header includes refresh button and error simulation toggle for enhanced functionality
 
+### AG Grid Community Edition v33 Configuration
+
+The application uses AG Grid Community Edition v33.3.2 with specific configuration to address known issues and ensure reliable rendering:
+
+#### Critical Height Configuration Issue
+
+**AG Grid v33 Community Edition Height Problem**: The Community Edition has documented issues with percentage-based heights that can cause:
+
+- Grid rendering failures
+- Incorrect sizing calculations
+- Grid collapse on certain browsers
+- Inconsistent behavior across different environments
+
+#### Solution Implementation
+
+**Fixed Height Strategy**: The application implements a comprehensive solution to prevent height-related issues:
+
+```csharp
+// Component automatically converts percentage heights to fixed values
+private string GetGridContainerStyle()
+{
+    // Prevent AG Grid v33 percentage height issues
+    var height = Height.Contains("%") ? "500px" : Height;
+    var width = Width.Contains("%") ? "100%" : Width; // Width percentages work fine
+    return $"height: {height}; width: {width};";
+}
+```
+
+**CSS Container Classes**: Dedicated CSS ensures reliable grid sizing:
+
+```css
+/* Fixed height strategy for AG Grid v33 Community Edition */
+#users-grid {
+  height: calc(100vh - 200px) !important; /* Viewport-based calculation */
+  min-height: 500px !important; /* Minimum height fallback */
+  width: 100% !important; /* Width percentages work correctly */
+}
+
+.ag-grid-container {
+  height: calc(100vh - 200px) !important;
+  min-height: 500px !important;
+  width: 100% !important;
+}
+```
+
+#### Grid Configuration Best Practices
+
+**Recommended Height Values**:
+
+- ✅ **Fixed pixels**: `500px`, `600px`, `calc(100vh - 200px)`
+- ✅ **Viewport calculations**: `calc(100vh - 200px)`, `calc(100vh - 150px)`
+- ❌ **Percentage heights**: `100%`, `80%`, `50%` (automatically converted to `500px`)
+
+**Working Configuration**:
+
+- **Width**: Percentage values work correctly (`100%`, `80%`)
+- **Height**: Use fixed values or viewport calculations only
+- **Theme**: Quartz theme provides modern, professional appearance
+- **DOM Layout**: `normal` layout mode for standard grid behavior
+
+#### Implementation Benefits
+
+- **Reliable Rendering**: Consistent grid display across all browsers and environments
+- **Responsive Design**: Viewport-based calculations adapt to different screen sizes
+- **Fallback Protection**: Minimum height prevents grid collapse
+- **Developer Experience**: Automatic percentage-to-fixed conversion prevents configuration errors
+
 ### Interface Design Philosophy
 
 The application implements a **streamlined interface approach** focused on optimal user experience:
@@ -404,6 +536,7 @@ The application implements a **streamlined interface approach** focused on optim
 - **Modern Design**: Uses Tailwind CSS classes for consistent styling, shadows, borders, and responsive design
 - **Production-Ready**: Designed for professional environments with optimal data grid presentation and user experience
 - **Interactive Controls**: Header includes animated refresh button and toggle switch for error simulation testing
+- **Memory Management**: Implements `IDisposable` pattern for proper cleanup of AppStateService subscriptions and resource management
 
 #### Key Design Decisions
 
@@ -415,6 +548,109 @@ The application implements a **streamlined interface approach** focused on optim
 
 This approach ensures the UsersGrid component provides reliable data presentation while maintaining professional appearance and functionality through AG Grid's proven default behaviors.
 
+## Recent Updates
+
+### Error Simulation Enhancement & Grid Lifecycle Management
+
+The UsersGrid component has been updated with enhanced error simulation capabilities and improved grid lifecycle management for robust development and testing workflows:
+
+#### **Enhanced Grid Lifecycle Management**:
+
+- **Clean State Transitions**: When switching off error simulation, the component now performs a complete grid cleanup and recreation to ensure a pristine state
+- **Grid Destruction & Recreation**: Automatically destroys and recreates the grid when transitioning from error simulation to normal mode for optimal reliability
+- **Extended DOM Update Delays**: Increased delay from 50ms to 100ms for DOM cleanup/update operations to ensure proper grid initialization after state changes
+- **Error-Safe Cleanup**: Grid destruction operations include comprehensive error handling to prevent cleanup failures from affecting component state
+- **State Reset Protection**: Grid initialization flag is properly reset during cleanup operations to maintain accurate component state
+
+#### **Robust Error Simulation System**:
+
+- **Comprehensive Error Testing**: Error simulation cycles through 5 different error types (network, timeout, JSON parsing, 404, unexpected) for thorough testing
+- **Clean State Management**: Error counter resets when switching off error simulation to ensure predictable behavior
+- **Grid State Coordination**: Parameter changes trigger appropriate grid updates or recreation based on current state
+- **Development-Friendly**: Simple toggle between normal operation and error demonstration with automatic state cleanup
+- **Improved Reliability**: Enhanced error handling ensures component remains stable during simulation mode transitions
+
+#### **Implementation Highlights**:
+
+```csharp
+// Clean slate when switching off error simulation
+if (!SimulateErrors)
+{
+    errorCounter = 0;
+
+    // Destroy and recreate grid for pristine state
+    if (isGridInitialized)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("usersInterop.destroyGrid", ContainerId);
+            isGridInitialized = false;
+        }
+        catch
+        {
+            // Ignore cleanup errors - ensure state is reset
+            isGridInitialized = false;
+        }
+    }
+}
+
+// Extended delay for DOM cleanup/update operations
+await Task.Delay(100); // Longer delay for DOM cleanup/updateDelay(50); // Small delay for DOM update
+        await InitializeGrid();
+    }
+    else
+    {
+        StateHasChanged();
+    }
+}
+
+// Comprehensive error simulation cycling through 5 error types
+if (SimulateErrors)
+{
+    var errorType = errorCounter % 5; // Cycle through 0-4
+    errorCounter++;
+
+    switch (errorType)
+    {
+        case 0: throw new HttpRequestException("Simulated network connection error");
+        case 1: throw new TaskCanceledException("Simulated request timeout");
+        case 2: throw new JsonException("Simulated JSON parsing error");
+        case 3: // Simulate 404 directly
+            errorState = new ErrorState
+            {
+                Message = "File Not Found (404)",
+                Details = "The users data file could not be located on the server.",
+                ActionText = "Retry Loading"
+            };
+            return;
+        case 4: throw new Exception("Simulated unexpected error");
+    }
+}
+```
+
+#### **Previous Updates - AppState Integration & Memory Management**:
+
+Both Home.razor and UsersGrid.razor components have been updated with comprehensive AppState integration and memory management:
+
+- **IDisposable Implementation**: Added `@implements IDisposable` for proper resource cleanup
+- **AppState Subscription**: Implements `AppState.OnChange += StateHasChanged` for automatic re-rendering
+- **Dual Loading States**: Uses both local (`isRefreshing`) and global (`AppState.SetLoading()`) loading coordination
+- **Memory Safety**: Proper disposal of AppStateService subscriptions to prevent memory leaks
+- **Dual Interface Implementation**: Implements both `IDisposable` and `IAsyncDisposable` for comprehensive cleanup
+- **Enhanced Disposal Pattern**: Separates AppState cleanup (`Dispose()`) from JS interop cleanup (`DisposeAsync()`)
+- **AG Grid v33 Height Fix**: Automatic percentage-to-fixed height conversion to prevent rendering issues
+
+#### **Benefits Achieved**:
+
+- **Automatic Grid Setup**: Grid initialization now happens automatically after successful data loading, reducing manual coordination
+- **Improved Reliability**: Enhanced finally block ensures consistent grid initialization regardless of data loading path
+- **Better Error Handling**: Comprehensive error simulation covers all major failure scenarios for thorough testing
+- **Enhanced Development Experience**: Developers can test specific error conditions with predictable cycling through error types
+- **Hybrid State Management**: Perfect balance of local and global state coordination
+- **Memory Leak Prevention**: Proper disposal patterns prevent resource leaks and ensure clean component lifecycle managementention\*\*: Comprehensive subscription cleanup across all components
+- **Cross-Component Awareness**: Components automatically react to global state changes
+- **AG Grid Reliability**: Fixed height strategy ensures consistent grid rendering
+
 ## Current Project Status
 
 The OmneSoft application is a fully functional Blazor WebAssembly project with the following current implementation:
@@ -422,22 +658,24 @@ The OmneSoft application is a fully functional Blazor WebAssembly project with t
 ### Core Features ✅
 
 - **Professional User Management Interface**: Complete home page with branded header, data grid, and controls
-- **AG Grid Integration**: Stable v33.3.2 implementation with Quartz theme and optimized CSS container classes for reliable rendering
+- **AG Grid Integration**: Stable v33.3.2 implementation with Quartz theme, fixed-height strategy, and optimized CSS container classes for reliable rendering
+- **AG Grid v33 Height Fix**: Automatic percentage-to-fixed height conversion to prevent Community Edition rendering issues
 - **Error Simulation System**: Built-in error testing with 5 different error scenarios (50% chance when enabled)
 - **Comprehensive Error Handling**: Network errors, timeouts, JSON parsing, HTTP status codes, and unexpected errors
-- **State Management**: Centralized AppStateService with reactive patterns and proper subscription management
-- **Loading States**: Dual loading state management (local and global) with animated indicators
+- **Hybrid State Management**: Centralized AppStateService with reactive patterns, dual loading states, and comprehensive disposal patterns
+- **Cross-Component Coordination**: Components automatically react to global state changes with memory-safe subscription patterns
+- **Loading States**: Dual loading state management (local and global) with animated indicators and cross-component awareness
 - **Refresh Functionality**: Complete data refresh with grid state reset and proper resource cleanup
 - **JavaScript Interop**: Robust AG Grid integration with lifecycle management and event handling
-- **Responsive Design**: Professional layout with dynamic viewport calculations and Tailwind CSS styling
+- **Responsive Design**: Professional layout with viewport-based CSS calculations, dedicated grid container classes, and Tailwind CSS styling
 
 ### Technical Implementation ✅
 
 - **.NET 8 LTS**: Long-term support foundation with WebAssembly hosting
 - **Dependency Injection**: Scoped services for HttpClient and state management
-- **Modern Build Pipeline**: Automated CSS building with PostCSS, Tailwind CSS, and production minification
+- **Modern Build Pipeline**: Automated CSS building with PostCSS, Tailwind CSS, AG Grid optimizations, and production minification
 - **Code Quality Tools**: ESLint, Prettier, Husky pre-commit hooks, and lint-staged for consistent formatting
-- **Memory Management**: Proper disposal patterns with IAsyncDisposable and resource cleanup
+- **Memory Management**: Proper disposal patterns with IDisposable and IAsyncDisposable implementations for comprehensive resource cleanup
 - **Production Ready**: Comprehensive error handling, timeout configuration, and stability optimizations
 
 ### Current Dependencies ✅
@@ -506,13 +744,15 @@ The application opens to the **Users Management** interface featuring:
 
 #### Error Simulation
 
-Toggle the "Simulate Errors" switch in the header to test error handling:
+Toggle the "Simulate Errors" switch in the header to test error handling with intelligent lifecycle-aware response:
 
 - **Network Errors**: Simulated connection failures
 - **Timeout Errors**: Request timeout scenarios
 - **JSON Parsing Errors**: Invalid data format handling
 - **HTTP 404 Errors**: Missing resource responses
 - **Unexpected Errors**: General exception handling
+- **Intelligent Toggle**: Changes take effect immediately with lifecycle-aware parameter detection
+- **Automatic Refresh**: Grid data refreshes automatically when simulation mode changes
 
 Each error type displays appropriate user feedback with retry options.
 
@@ -532,11 +772,12 @@ The UsersGrid component provides:
 
 The application follows modern Blazor WebAssembly patterns with:
 
-- **Component-Based Architecture**: Reusable UI components with clear separation of concerns
-- **Centralized State Management**: AppStateService for global application state
+- **Component-Based Architecture**: Reusable UI components with clear separation of concerns and proper disposal patterns
+- **Centralized State Management**: AppStateService for global application state with reactive subscriptions
 - **Dependency Injection**: Scoped services for HTTP client and state management
-- **JavaScript Interop**: Dedicated interop layer for AG Grid integration
+- **JavaScript Interop**: Dedicated interop layer for AG Grid integration with resource cleanup
 - **Responsive Design**: Tailwind CSS with mobile-first approach
+- **Memory Management**: Comprehensive disposal patterns using both IDisposable and IAsyncDisposable interfaces
 
 ### Key Components
 
@@ -547,8 +788,11 @@ Located at `Components/UI/UsersGrid.razor`, this is the main data grid component
 - **Error Handling**: Comprehensive error states with user-friendly messages
 - **Loading States**: Animated loading indicators with proper state management
 - **AG Grid Integration**: Uses v33.3.2 with correct createGrid API
+- **Intelligent Parameter Management**: Lifecycle-aware detection of `SimulateErrors` parameter changes with proper initialization state tracking
+- **Optimized Update Logic**: Only processes parameter changes after grid initialization to prevent unnecessary operations during startup
+- **Real-Time Data Refresh**: Automatic grid data refresh when error simulation mode is toggled with immediate UI updates
 - **Event Callbacks**: Row click and selection change events
-- **Configurable Parameters**: Height, width, data URL, and error simulation options
+- **Configurable Parameters**: Height, width, data URL, and intelligent error simulation options with lifecycle-aware parameter detection
 
 #### AppStateService
 
@@ -576,12 +820,13 @@ The project uses an integrated build pipeline:
 
 ### Testing Error Scenarios
 
-The application includes built-in error simulation for testing:
+The application includes built-in error simulation for testing with intelligent lifecycle-aware parameter detection:
 
-1. Enable "Simulate Errors" toggle in the header
-2. Refresh data to trigger random error scenarios
-3. Test different error types and recovery mechanisms
+1. Toggle "Simulate Errors" switch in the header (changes apply immediately with intelligent state tracking)
+2. Grid automatically refreshes data when simulation mode changes
+3. Test different error types and recovery mechanisms (50% chance when enabled)
 4. Verify user feedback and retry functionality
+5. Toggle can be changed multiple times without manual refresh
 
 ### Deployment
 
@@ -615,7 +860,7 @@ The application uses **Blazor WebAssembly** instead of Blazor Server for several
 │       ├── Button.razor         # Custom button component
 │       └── UsersGrid.razor      # Specialized user management grid with error handling and Quartz theme
 ├── Pages/
-│   └── Home.razor       # Professional user management interface with header controls and full-height layout
+│   └── Home.razor       # Professional user management interface with header controls, full-height layout, and IDisposable implementation
 ├── Services/            # Application services
 │   ├── AppStateService.cs       # Centralized state management implementation
 │   └── IAppStateService.cs      # State management interface
@@ -1000,7 +1245,7 @@ The application's primary interface (`/`) provides a professional, optimized use
 - **Professional Data Grid**: Interactive AG Grid displaying 40 superhero-themed user records with sorting, filtering, and selection capabilities within an optimized flexible layout
 - **Streamlined User Experience**: Professional interface with dedicated header and flexible content area that adapts to viewport size
 - **User Selection Management**: Single-row selection with real-time row click and selection event handling
-- **Enhanced Error Simulation Testing**: Configurable error simulation toggle (50% chance) with 5 comprehensive error scenarios using structured control flow, integrated into the header for thorough development testing of all error handling paths
+- **Simple Error Simulation Testing**: Toggle-able error simulation that demonstrates 404 "File Not Found" errors, integrated into the header for easy development testing of error handling
 
 #### User Interface Features
 
@@ -1183,7 +1428,7 @@ The `UsersGrid` component is the core of the application's user management funct
 - **Comprehensive error handling** with user-friendly error messages and visual error states
 - **Built-in retry functionality** for failed requests with loading state management
 - **Network resilience** handling 404, 401, 500, timeout, and connection error scenarios
-- **Enhanced error simulation testing** - Configurable 50% random error generation with 5 distinct error scenarios: network failures, timeouts, JSON parsing errors, HTTP 404 responses, and unexpected exceptions for comprehensive development testing
+- **Simple error simulation testing** - Demonstrates 404 "File Not Found" error handling for development testing and UI validation
 
 **User Interface:**
 
@@ -1485,7 +1730,7 @@ createGrid: function (containerId, gridOptions, dotNetRef) {
 ✅ **Status Visualization** - Color-coded user status display with inline CSS styling  
 ✅ **Date Formatting** - Human-readable timestamp formatting with locale-aware display  
 ✅ **Role Management** - Comma-separated role display with proper array rendering  
-✅ **Error Simulation** - Built-in 50% random error generation covering 5 different error types  
+✅ **Error Simulation** - Simple 404 error demonstration for testing error handling  
 ✅ **Lifecycle Optimization** - Synchronous initialization for subscriptions, async for data operations  
 ✅ **Resource Management** - Comprehensive disposal of JS interop, subscriptions, and .NET references  
 ✅ **Accessibility Features** - Focus management, semantic HTML structure, ARIA attributes, and WCAG compliance
@@ -1496,13 +1741,9 @@ The UsersGrid component includes built-in error simulation functionality for dev
 
 #### Error Simulation Features
 
-- **Configurable Error Rate** - Toggle-able error simulation with 50% random error rate when enabled
-- **Multiple Error Types** - Simulates various real-world error scenarios:
-  - **Network Errors** - `HttpRequestException` for connection failures
-  - **Timeout Errors** - `TaskCanceledException` for request timeouts
-  - **JSON Parsing Errors** - `JsonException` for malformed data responses
-  - **404 Not Found** - Attempts to fetch non-existent resources
-  - **Unexpected Errors** - Generic `Exception` for unknown failures
+- **Simple Error Demonstration** - Toggle-able error simulation that demonstrates 404 "File Not Found" errors
+- **Consistent Error Type** - Always simulates the same error scenario for predictable testing:
+  - **404 Not Found** - Demonstrates "File Not Found" error handling with user-friendly messaging
 - **1-Second Loading Delay** - Simulates realistic network latency for testing loading states
 - **Comprehensive Error Recovery** - Tests retry mechanisms and user feedback systems
 - **Interactive Control** - Toggle error simulation on/off via UI switch in Grid Demo page
@@ -1641,7 +1882,7 @@ The application includes a comprehensive user dataset (`wwwroot/data/users.json`
 - **Interactive data grid** displaying 40 superhero-themed user records
 - **Real-time data loading** with automatic initialization and manual refresh controls
 - **User selection management** with single-row selection and detailed feedback
-- **Error simulation testing** with configurable 50% random error generation
+- **Error simulation testing** with simple 404 error demonstration
 - **Comprehensive error handling** with user-friendly messages and retry mechanisms
 - **Status message system** with contextual icons and auto-dismiss functionality
 - **Responsive controls** with loading states and animated indicators
@@ -1651,7 +1892,7 @@ The application includes a comprehensive user dataset (`wwwroot/data/users.json`
 - **UsersGrid component** with comprehensive user management data
 - **40 superhero-themed user records** with realistic organizational structure
 - **Advanced error handling** with detailed error states and retry mechanisms
-- **Configurable error simulation** - Toggle-able random error generation for development and testing
+- **Simple error simulation** - Toggle-able 404 error demonstration for development and testing
 - **User status tracking** (Active, Inactive, Suspended) with color-coded display
 - **Role-based visualization** (admin, manager, field, analyst, etc.) with comma-separated display
 - **License tier management** (Enterprise, Field Level, Standard)
