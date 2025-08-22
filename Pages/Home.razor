@@ -11,38 +11,44 @@
             <h2 class="text-4xl font-bold text-gray-800 mb-2">Counter Demo</h2>
             <p class="text-gray-600">Blazor WebAssembly with Modern Components</p>
         </div>
-        
+
         <div class="text-center mb-8">
             <div class="inline-flex items-center justify-center w-24 h-24 bg-indigo-100 rounded-full mb-4">
                 <span class="text-3xl font-bold text-indigo-600">@currentCount</span>
             </div>
             <p class="text-lg text-gray-700">Current count: <span class="font-semibold text-indigo-600">@currentCount</span></p>
         </div>
-        
+
         <div class="space-y-4">
-            <Button OnClick="IncrementCount" 
-                    Variant="Button.ButtonVariant.Primary" 
+            <Button OnClick="IncrementCount"
+                    Variant="Button.ButtonVariant.Primary"
                     class="w-full">
                 Click to Increment
             </Button>
-            
-            <Button OnClick="ResetCount" 
-                    Variant="Button.ButtonVariant.Secondary" 
+
+            <Button OnClick="ResetCount"
+                    Variant="Button.ButtonVariant.Secondary"
                     class="w-full">
                 Reset Counter
             </Button>
-            
-            <Button OnClick="ShowAlert" 
-                    Variant="Button.ButtonVariant.Success" 
+
+            <Button OnClick="ShowAlert"
+                    Variant="Button.ButtonVariant.Success"
                     IsLoading="@isJSInteropLoading"
                     class="w-full">
                 Test JSInterop
             </Button>
         </div>
-        
+
         <div class="mt-6 text-center">
             <p class="text-sm text-gray-500">✅ Blazor WebAssembly + .NET 8</p>
             <p class="text-xs text-gray-400 mt-2">@lastAction</p>
+        </div>
+
+        <div class="mt-6 pt-6 border-t border-gray-200">
+            <a href="/grid-demo" class="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded transition-colors">
+                🔗 View AG Grid Demo
+            </a>
         </div>
     </div>
 </div>
@@ -62,7 +68,7 @@
         currentCount++;
         lastAction = $"Incremented to {currentCount} at {DateTime.Now:HH:mm:ss}";
     }
-    
+
     private void ResetCount()
     {
         currentCount = 0;
@@ -73,7 +79,7 @@
     {
         isJSInteropLoading = true;
         AppState.SetLoading(true);
-        
+
         try
         {
             // Simulate some async work

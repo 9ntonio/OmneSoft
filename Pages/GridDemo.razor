@@ -1,0 +1,338 @@
+@page "/grid-demo"
+
+<PageTitle>AG Grid Demo</PageTitle>
+
+<div class="container mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">AG Grid Demo</h1>
+
+    <div class="mb-4 space-x-2">
+        <button @onclick="LoadSampleData"
+                disabled="@isLoadingData"
+                class="@GetLoadButtonClass() font-bold py-2 px-4 rounded transition-colors">
+            @if (isLoadingData)
+            {
+                <span class="inline-flex items-center">
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Loading...
+                </span>
+            }
+            else
+            {
+                <text>Load Sample Data (@(rowData?.Length ?? 0) rows)</text>
+            }
+        </button>
+        <button @onclick="ClearData"
+                disabled="@isClearingData"
+                class="@GetClearButtonClass() font-bold py-2 px-4 rounded transition-colors">
+            @if (isClearingData)
+            {
+                <span class="inline-flex items-center">
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Clearing...
+                </span>
+            }
+            else
+            {
+                <text>Clear Data</text>
+            }
+        </button>
+        <button @onclick="AddRandomRow"
+                disabled="@isAddingRow"
+                class="@GetAddButtonClass() font-bold py-2 px-4 rounded transition-colors">
+            @if (isAddingRow)
+            {
+                <span class="inline-flex items-center">
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Adding...
+                </span>
+            }
+            else
+            {
+                <text>Add Random Row</text>
+            }
+        </button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="mb-4 p-4 @GetStatusMessageClass() border rounded transition-all duration-300">
+            <div class="flex items-center">
+                @if (statusMessage.Contains("✅"))
+                {
+                    <svg class="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                }
+                else if (statusMessage.Contains("🔄"))
+                {
+                    <svg class="animate-spin w-5 h-5 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                }
+                <strong>@statusMessage</strong>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(selectedRowInfo))
+    {
+        <div class="mb-4 p-4 bg-blue-100 border border-blue-300 rounded">
+            <strong>Selected Row:</strong> @selectedRowInfo
+        </div>
+    }
+
+    <AgGrid @ref="agGrid"
+            ContainerId="demo-grid"
+            Height="500px"
+            Width="100%"
+            RowData="rowData"
+            ColumnDefs="columnDefs"
+            EnableSelection="true"
+            SelectionMode="single"
+            OnRowClicked="OnRowClicked"
+            OnSelectionChanged="OnSelectionChanged" />
+</div>
+
+@code {
+    private AgGrid? agGrid;
+    private object[]? rowData;
+    private object[]? columnDefs;
+    private string selectedRowInfo = string.Empty;
+    private string statusMessage = string.Empty;
+    private bool isLoadingData = false;
+    private bool isClearingData = false;
+    private bool isAddingRow = false;
+    private Timer? statusTimer;
+
+    protected override void OnInitialized()
+    {
+        // Define column definitions
+        columnDefs = new object[]
+        {
+            new { field = "id", headerName = "ID", width = 80, sortable = true },
+            new { field = "name", headerName = "Name", width = 150, sortable = true, filter = true },
+            new { field = "email", headerName = "Email", width = 200, sortable = true, filter = true },
+            new { field = "age", headerName = "Age", width = 100, sortable = true, filter = "agNumberColumnFilter" },
+            new { field = "department", headerName = "Department", width = 150, sortable = true, filter = true },
+            new { field = "salary", headerName = "Salary", width = 120, sortable = true, filter = "agNumberColumnFilter" }
+        };
+
+        // Don't auto-load data - let user click the button
+        rowData = Array.Empty<object>();
+        ShowStatusMessage("Click 'Load Sample Data' to populate the grid with employee records", "info");
+    }
+
+    private async Task LoadSampleData()
+    {
+        isLoadingData = true;
+        ShowStatusMessage("🔄 Generating sample employee data...", "loading");
+        StateHasChanged();
+
+        try
+        {
+            // Simulate some loading time to show the loading state
+            await Task.Delay(800);
+
+            var random = new Random();
+            var departments = new[] { "Engineering", "Marketing", "Sales", "HR", "Finance", "Operations", "Legal", "Design" };
+            var firstNames = new[] { "John", "Jane", "Bob", "Alice", "Charlie", "Diana", "Eve", "Frank", "Grace", "Henry", "Ivy", "Jack", "Kate", "Liam", "Mia", "Noah", "Olivia", "Paul", "Quinn", "Ruby" };
+            var lastNames = new[] { "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin" };
+
+            // Generate 25 random employees (different each time)
+            rowData = Enumerable.Range(1, 25).Select(i => new
+            {
+                id = i,
+                name = $"{firstNames[random.Next(firstNames.Length)]} {lastNames[random.Next(lastNames.Length)]}",
+                email = $"employee{i}@company.com",
+                age = random.Next(22, 65),
+                department = departments[random.Next(departments.Length)],
+                salary = random.Next(35000, 150000)
+            }).ToArray();
+
+            if (agGrid != null)
+            {
+                await agGrid.UpdateRowData(rowData);
+            }
+
+            ShowStatusMessage($"✅ Successfully loaded {rowData.Length} employee records!", "success");
+        }
+        catch (Exception ex)
+        {
+            ShowStatusMessage($"❌ Error loading data: {ex.Message}", "error");
+        }
+        finally
+        {
+            isLoadingData = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ClearData()
+    {
+        isClearingData = true;
+        ShowStatusMessage("🔄 Clearing all data...", "loading");
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(300); // Brief delay for visual feedback
+
+            rowData = Array.Empty<object>();
+            if (agGrid != null)
+            {
+                await agGrid.UpdateRowData(rowData);
+            }
+            selectedRowInfo = string.Empty;
+            ShowStatusMessage("✅ All data cleared successfully!", "success");
+        }
+        catch (Exception ex)
+        {
+            ShowStatusMessage($"❌ Error clearing data: {ex.Message}", "error");
+        }
+        finally
+        {
+            isClearingData = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task AddRandomRow()
+    {
+        isAddingRow = true;
+        ShowStatusMessage("🔄 Adding new employee...", "loading");
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(400); // Brief delay for visual feedback
+
+            var random = new Random();
+            var departments = new[] { "Engineering", "Marketing", "Sales", "HR", "Finance", "Operations", "Legal", "Design" };
+            var firstNames = new[] { "Alex", "Sam", "Jordan", "Casey", "Taylor", "Morgan", "Riley", "Avery", "Cameron", "Drew" };
+            var lastNames = new[] { "Thompson", "White", "Harris", "Clark", "Lewis", "Robinson", "Walker", "Perez", "Hall", "Young" };
+
+            var currentData = rowData?.ToList() ?? new List<object>();
+            var newId = currentData.Count + 1;
+
+            var newRow = new
+            {
+                id = newId,
+                name = $"{firstNames[random.Next(firstNames.Length)]} {lastNames[random.Next(lastNames.Length)]}",
+                email = $"newemployee{newId}@company.com",
+                age = random.Next(22, 65),
+                department = departments[random.Next(departments.Length)],
+                salary = random.Next(35000, 150000)
+            };
+
+            currentData.Add(newRow);
+            rowData = currentData.ToArray();
+
+            if (agGrid != null)
+            {
+                await agGrid.UpdateRowData(rowData);
+            }
+
+            ShowStatusMessage($"✅ Added new employee: {newRow.name} ({newRow.department})", "success");
+        }
+        catch (Exception ex)
+        {
+            ShowStatusMessage($"❌ Error adding employee: {ex.Message}", "error");
+        }
+        finally
+        {
+            isAddingRow = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnRowClicked(object rowData)
+    {
+        // Handle row click
+        var json = System.Text.Json.JsonSerializer.Serialize(rowData);
+        selectedRowInfo = $"Row clicked: {json}";
+        StateHasChanged();
+    }
+
+    private void OnSelectionChanged(object[] selectedRows)
+    {
+        // Handle selection change
+        if (selectedRows.Length > 0)
+        {
+            var json = System.Text.Json.JsonSerializer.Serialize(selectedRows[0]);
+            selectedRowInfo = $"Row selected: {json}";
+        }
+        else
+        {
+            selectedRowInfo = "No rows selected";
+        }
+        StateHasChanged();
+    }
+
+    private void ShowStatusMessage(string message, string type)
+    {
+        statusMessage = message;
+        StateHasChanged();
+
+        // Auto-hide success/error messages after 3 seconds
+        if (type == "success" || type == "error")
+        {
+            statusTimer?.Dispose();
+            statusTimer = new Timer(_ =>
+            {
+                InvokeAsync(() =>
+                {
+                    statusMessage = string.Empty;
+                    StateHasChanged();
+                });
+            }, null, 3000, Timeout.Infinite);
+        }
+    }
+
+    private string GetLoadButtonClass()
+    {
+        return isLoadingData
+            ? "bg-blue-400 cursor-not-allowed text-white"
+            : "bg-blue-500 hover:bg-blue-700 text-white";
+    }
+
+    private string GetClearButtonClass()
+    {
+        return isClearingData
+            ? "bg-red-400 cursor-not-allowed text-white"
+            : "bg-red-500 hover:bg-red-700 text-white";
+    }
+
+    private string GetAddButtonClass()
+    {
+        return isAddingRow
+            ? "bg-green-400 cursor-not-allowed text-white"
+            : "bg-green-500 hover:bg-green-700 text-white";
+    }
+
+    private string GetStatusMessageClass()
+    {
+        if (statusMessage.Contains("✅"))
+            return "bg-green-100 border-green-300 text-green-800";
+        else if (statusMessage.Contains("❌"))
+            return "bg-red-100 border-red-300 text-red-800";
+        else if (statusMessage.Contains("🔄"))
+            return "bg-blue-100 border-blue-300 text-blue-800";
+        else
+            return "bg-gray-100 border-gray-300 text-gray-800";
+    }
+
+    public void Dispose()
+    {
+        statusTimer?.Dispose();
+    }
+}

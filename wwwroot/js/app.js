@@ -16,6 +16,7 @@ window.blazorFunctions = {
   },
 
   logToConsole: function (message) {
+    // eslint-disable-next-line no-console
     console.log('From Blazor:', message);
   },
 };
