@@ -1,24 +1,23 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OmneSoft</title>
+    <title>Users</title>
     <base href="/" />
-    <link href="css/app.css" rel="stylesheet" />
+    <link href="css/app.min.css" rel="stylesheet" />
     <link rel="icon" type="image/png" href="favicon.png" />
-    <link href="OmneSoft.styles.css" rel="stylesheet" />
+    <!-- Scoped CSS will be auto-generated during build if needed -->
 
-    <!-- Preconnect to improve performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <!-- AG Grid v33 - Using Theming API only (no CSS theme files needed) -->
 
     <!-- Meta tags for PWA and SEO -->
     <meta
       name="description"
       content="OmneSoft - Modern Blazor WebAssembly Application"
     />
-    <meta name="theme-color" content="#4f46e5" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#007acc" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   </head>
 
@@ -30,7 +29,7 @@
           cx="50%"
           cy="50%"
           fill="none"
-          stroke="#e0e7ff"
+          stroke="#ff0000"
           stroke-width="3%"
         />
         <circle
@@ -38,7 +37,7 @@
           cx="50%"
           cy="50%"
           fill="none"
-          stroke="#3b82f6"
+          stroke="#007acc"
           stroke-width="3%"
           stroke-linecap="round"
           stroke-dasharray="24% 76%"
@@ -52,7 +51,11 @@
       <a href="" class="reload">Reload</a>
       <a class="dismiss">🗙</a>
     </div>
+    <!-- AG Grid JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@33.3.2/dist/ag-grid-community.min.js"></script>
+
     <script src="js/interop.js"></script>
+    <script src="js/users-interop.js"></script>
     <script src="_framework/blazor.webassembly.js"></script>
   </body>
 </html>

@@ -1,0 +1,547 @@
+@using Microsoft.JSInterop
+@using System.Net.Http.Json
+@using System.Text.Json
+@using OmneSoft.Services
+@implements IAsyncDisposable
+@implements IDisposable
+@inject IJSRuntime JSRuntime
+@inject HttpClient HttpClient
+@inject IAppStateService AppState
+
+@if (errorState != null)
+{
+    <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-4">
+        <div class="flex items-center mb-4">
+            <svg class="w-6 h-6 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+            <h3 class="text-lg font-semibold text-red-800">Unable to Load Users</h3>
+        </div>
+        <div class="mb-4">
+            <p class="text-red-700 mb-2">@errorState.Message</p>
+            <p class="text-red-600 text-sm">@errorState.Details</p>
+        </div>
+        <button @onclick="RetryLoadUsers" disabled="@isLoading" class="@GetRetryButtonClass() font-medium py-2 px-4 rounded-lg transition-colors">
+            @if (isLoading)
+            {
+                <span>Retrying...</span>
+            }
+            else
+            {
+                <span>@errorState.ActionText</span>
+            }
+        </button>
+    </div>
+}
+else if (isLoading)
+{
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-4">
+        <div class="flex items-center">
+            <svg class="animate-spin w-6 h-6 text-blue-600 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-blue-800 font-medium">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div id="@ContainerId" class="ag-theme-quartz @GetGridContainerClass()" style="@GetGridContainerStyle()"></div>
+}
+
+@code {
+    [Parameter] public string ContainerId { get; set; } = Guid.NewGuid().ToString();
+    [Parameter] public string Height { get; set; } = "500px";
+    [Parameter] public string Width { get; set; } = "100%";
+    [Parameter] public EventCallback<object> OnRowClicked { get; set; }
+    [Parameter] public EventCallback<object[]> OnSelectionChanged { get; set; }
+    [Parameter] public bool EnableSelection { get; set; } = true;
+    [Parameter] public string SelectionMode { get; set; } = "single";
+    [Parameter] public string DataUrl { get; set; } = "data/users.json";
+    [Parameter] public bool SimulateErrors { get; set; } = false;
+
+    private DotNetObjectReference<UsersGrid>? dotNetRef;
+    private bool isGridInitialized = false;
+    private bool isLoading = false;
+    private ErrorState? errorState = null;
+    private object[]? usersData;
+
+    private object[] columnDefs = new object[]
+    {
+        new {
+            field = "id",
+            headerName = "ID",
+            width = 100
+        },
+        new {
+            field = "fullName",
+            headerName = "Full Name",
+            width = 180
+        },
+        new {
+            field = "email",
+            headerName = "Email",
+            width = 220
+        },
+        new {
+            field = "roles",
+            headerName = "Roles",
+            width = 200
+        },
+        new {
+            field = "license",
+            headerName = "License",
+            width = 120
+        },
+        new {
+            field = "status",
+            headerName = "Status",
+            width = 100
+        },
+        new {
+            field = "lastActive",
+            headerName = "Last Active",
+            width = 150
+        },
+        new {
+            field = "invitedBy",
+            headerName = "Invited By",
+            width = 150
+        }
+    };
+
+
+
+    private bool previousSimulateErrors = false;
+    private static int errorCounter = 0; // Static counter to cycle through error types
+
+    protected override void OnInitialized()
+    {
+        // Subscribe to global state changes for automatic re-rendering
+        AppState.OnChange += StateHasChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            previousSimulateErrors = SimulateErrors;
+            await LoadUsers();
+            if (errorState == null)
+            {
+                await InitializeGrid();
+            }
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Check if SimulateErrors parameter changed after initial render
+        if (previousSimulateErrors != SimulateErrors && isGridInitialized)
+        {
+            previousSimulateErrors = SimulateErrors;
+
+            // Reset error counter when switching off error simulation
+            if (!SimulateErrors)
+            {
+                errorCounter = 0;
+
+                // Clean slate when switching off error simulation - destroy and recreate grid
+                if (isGridInitialized)
+                {
+                    try
+                    {
+                        await JSRuntime.InvokeVoidAsync("usersInterop.destroyGrid", ContainerId);
+                        isGridInitialized = false;
+                    }
+                    catch
+                    {
+                        // Ignore cleanup errors
+                        isGridInitialized = false;
+                    }
+                }
+            }
+
+            // Reload data with new simulation setting
+            await LoadUsers();
+
+            // Handle grid initialization/update after loading
+            if (errorState == null && usersData != null)
+            {
+                if (isGridInitialized)
+                {
+                    // Update existing grid
+                    await JSRuntime.InvokeVoidAsync("usersInterop.setRowData", ContainerId, usersData);
+                }
+                else
+                {
+                    // Initialize grid if not already done
+                    StateHasChanged(); // Update UI first
+                    await Task.Delay(100); // Longer delay for DOM cleanup/update
+                    await InitializeGrid();
+                }
+            }
+
+            // Trigger UI update
+            StateHasChanged();
+        }
+        else if (!isGridInitialized)
+        {
+            // Update the tracking variable for first-time initialization
+            previousSimulateErrors = SimulateErrors;
+        }
+    }
+
+    private async Task LoadUsers()
+    {
+        isLoading = true;           // Component-specific loading state (shows component loader)
+        AppState.SetLoading(true);  // Global loading state for coordination
+        errorState = null;
+        StateHasChanged();
+
+        try
+        {
+            // Add 1 second delay to simulate loading time
+            await Task.Delay(1000);
+
+            // Cycle through all 5 error types for testing
+            if (SimulateErrors)
+            {
+                var errorType = errorCounter % 5; // Cycle through 0-4
+                errorCounter++;
+
+                switch (errorType)
+                {
+                    case 0:
+                        throw new HttpRequestException("Simulated network connection error");
+                    case 1:
+                        throw new TaskCanceledException("Simulated request timeout");
+                    case 2:
+                        throw new JsonException("Simulated JSON parsing error");
+                    case 3:
+                        // Simulate 404 directly
+                        errorState = new ErrorState
+                        {
+                            Message = "File Not Found (404)",
+                            Details = "The users data file could not be located on the server.",
+                            ActionText = "Retry Loading"
+                        };
+                        return;
+                    case 4:
+                        throw new Exception("Simulated unexpected error");
+                }
+            }
+
+            // Normal request processing
+            var response = await HttpClient.GetAsync(DataUrl);
+            await ProcessResponse(response);
+
+        }
+        catch (HttpRequestException)
+        {
+            errorState = new ErrorState
+            {
+                Message = "Network Connection Error",
+                Details = "Unable to connect to the server. Please check your internet connection.",
+                ActionText = "Retry Connection"
+            };
+        }
+        catch (TaskCanceledException)
+        {
+            errorState = new ErrorState
+            {
+                Message = "Request Timeout",
+                Details = "The request took too long to complete. Please try again.",
+                ActionText = "Try Again"
+            };
+        }
+        catch (JsonException)
+        {
+            errorState = new ErrorState
+            {
+                Message = "Data Format Error",
+                Details = "The server returned invalid data that could not be processed.",
+                ActionText = "Reload Data"
+            };
+        }
+        catch (Exception)
+        {
+            errorState = new ErrorState
+            {
+                Message = "Unexpected Error",
+                Details = "An unexpected error occurred while loading the data.",
+                ActionText = "Try Again"
+            };
+        }
+        finally
+        {
+            isLoading = false;          // Clear component loading state
+            AppState.SetLoading(false); // Clear global loading state
+            StateHasChanged();
+        }
+    }
+
+    private async Task ProcessResponse(HttpResponseMessage response)
+    {
+        switch (response.StatusCode)
+        {
+            case System.Net.HttpStatusCode.OK:
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                usersData = JsonSerializer.Deserialize<object[]>(jsonContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                break;
+
+            case System.Net.HttpStatusCode.NotFound:
+                errorState = new ErrorState
+                {
+                    Message = "File Not Found (404)",
+                    Details = "The users data file could not be located on the server.",
+                    ActionText = "Retry Loading"
+                };
+                break;
+
+            case System.Net.HttpStatusCode.Unauthorized:
+                errorState = new ErrorState
+                {
+                    Message = "Access denied",
+                    Details = "You don't have permission to access the users data.",
+                    ActionText = "Try Again"
+                };
+                break;
+
+            case System.Net.HttpStatusCode.InternalServerError:
+                errorState = new ErrorState
+                {
+                    Message = "Server error occurred",
+                    Details = "The server encountered an error while processing your request.",
+                    ActionText = "Retry"
+                };
+                break;
+
+            case System.Net.HttpStatusCode.RequestTimeout:
+                errorState = new ErrorState
+                {
+                    Message = "Request timed out",
+                    Details = "The server took too long to respond. Please check your connection.",
+                    ActionText = "Try Again"
+                };
+                break;
+
+            default:
+                errorState = new ErrorState
+                {
+                    Message = $"Unexpected error ({(int)response.StatusCode})",
+                    Details = $"Status: {response.StatusCode}. Please try again or contact support.",
+                    ActionText = "Retry"
+                };
+                break;
+        }
+    }
+
+    private async Task InitializeGrid()
+    {
+        try
+        {
+            dotNetRef = DotNetObjectReference.Create(this);
+            var validRowData = usersData ?? Array.Empty<object>();
+
+            System.Console.WriteLine($"Initializing grid with {validRowData.Length} rows");
+            System.Console.WriteLine($"Container ID: {ContainerId}");
+
+            var gridOptions = new
+            {
+                columnDefs = columnDefs,
+                rowData = validRowData,
+                domLayout = "normal",
+                // Use v33 Community Edition compatible selection API
+                rowSelection = EnableSelection ? SelectionMode : "none", // Will be converted to singleRow/multiRow in JS
+                defaultColDef = new
+                {
+                    resizable = true,
+                    sortable = true,
+                    filter = true,
+                    minWidth = 100
+                },
+                // v33 Community Edition compatible options
+                suppressLoadingOverlay = false,
+                suppressNoRowsOverlay = false,
+                overlayLoadingTemplate = "<span class=\"ag-overlay-loading-center\">Loading...</span>",
+                overlayNoRowsTemplate = "<span class=\"ag-overlay-no-rows-center\">No data available</span>",
+                // Accessibility and performance improvements
+                maintainColumnOrder = true,
+                suppressColumnVirtualisation = false
+                // getRowId will be handled by JS interop
+            };
+
+            // Ensure DOM is ready and container exists
+            await Task.Delay(300);
+
+            var containerExists = await JSRuntime.InvokeAsync<bool>("eval", $"document.getElementById('{ContainerId}') !== null");
+            if (!containerExists)
+            {
+                throw new InvalidOperationException($"Container element '{ContainerId}' not found in DOM");
+            }
+
+            // Ensure container has proper dimensions for AG Grid v33
+            await JSRuntime.InvokeVoidAsync("eval", $"const el = document.getElementById('{ContainerId}'); if(el) {{ el.style.height = el.style.height || '500px'; el.style.width = el.style.width || '100%'; }}");
+
+            isGridInitialized = await JSRuntime.InvokeAsync<bool>("usersInterop.createGrid", ContainerId, gridOptions, dotNetRef);
+
+            System.Console.WriteLine($"Grid initialized: {isGridInitialized}");
+
+            if (isGridInitialized)
+            {
+                await Task.Delay(200);
+                await JSRuntime.InvokeVoidAsync("usersInterop.sizeToFit", ContainerId);
+
+                // Validate grid structure and fix ARIA issues
+                await Task.Delay(100);
+                await JSRuntime.InvokeVoidAsync("usersInterop.validateGrid", ContainerId);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Console.WriteLine($"Grid initialization error: {ex.Message}");
+            errorState = new ErrorState
+            {
+                Message = "Grid initialization failed",
+                Details = $"Failed to initialize the data grid component: {ex.Message}",
+                ActionText = "Reload Grid"
+            };
+            StateHasChanged();
+        }
+    }
+
+    private async Task RetryLoadUsers()
+    {
+        if (isGridInitialized)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("usersInterop.destroyGrid", ContainerId);
+                isGridInitialized = false;
+            }
+            catch { }
+        }
+
+        await LoadUsers();
+        if (errorState == null)
+        {
+            await InitializeGrid();
+        }
+    }
+
+    public async Task RefreshData()
+    {
+        // Always reload data from server to pick up new SimulateErrors setting
+        await LoadUsers();
+
+        if (errorState == null)
+        {
+            if (isGridInitialized)
+            {
+                // Update existing grid with new data
+                await JSRuntime.InvokeVoidAsync("usersInterop.setRowData", ContainerId, usersData ?? Array.Empty<object>());
+            }
+            else
+            {
+                // Initialize grid if not already done
+                await InitializeGrid();
+            }
+        }
+    }
+
+    public async Task<object[]> GetSelectedRows()
+    {
+        if (isGridInitialized)
+        {
+            return await JSRuntime.InvokeAsync<object[]>("usersInterop.getSelectedRows", ContainerId);
+        }
+        return Array.Empty<object>();
+    }
+
+    public async Task SizeToFit()
+    {
+        if (isGridInitialized)
+        {
+            await JSRuntime.InvokeVoidAsync("usersInterop.sizeToFit", ContainerId);
+        }
+    }
+
+    [JSInvokable]
+    public async Task HandleRowClicked(object rowData)
+    {
+        if (OnRowClicked.HasDelegate)
+        {
+            await OnRowClicked.InvokeAsync(rowData);
+        }
+    }
+
+    [JSInvokable]
+    public async Task HandleSelectionChanged(object[] selectedRows)
+    {
+        if (OnSelectionChanged.HasDelegate)
+        {
+            await OnSelectionChanged.InvokeAsync(selectedRows);
+        }
+    }
+
+    private string GetRetryButtonClass()
+    {
+        return isLoading
+            ? "bg-gray-400 cursor-not-allowed text-white"
+            : "bg-red-600 hover:bg-red-700 text-white";
+    }
+
+    private string GetGridContainerClass()
+    {
+        // Use CSS class for main users-grid, no additional classes for others
+        return ContainerId == "users-grid" ? "" : "";
+    }
+
+    private string GetGridContainerStyle()
+    {
+        // For users-grid, let CSS handle sizing. For others, use parameters but avoid percentages
+        if (ContainerId == "users-grid")
+        {
+            return ""; // CSS will handle it
+        }
+
+        // For other grids, ensure no percentage heights
+        var height = Height.Contains("%") ? "500px" : Height;
+        var width = Width.Contains("%") ? "100%" : Width; // Width percentages are OK
+
+        return $"height: {height}; width: {width};";
+    }
+
+    public void Dispose()
+    {
+        // Unsubscribe from global state changes to prevent memory leaks
+        AppState.OnChange -= StateHasChanged;
+
+        // Dispose of .NET object reference
+        dotNetRef?.Dispose();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Cleanup JS interop resources
+        if (isGridInitialized)
+        {
+            await JSRuntime.InvokeVoidAsync("usersInterop.destroyGrid", ContainerId);
+        }
+
+        // Call synchronous dispose
+        Dispose();
+    }
+
+    private class ErrorState
+    {
+        public string Message { get; set; } = string.Empty;
+        public string Details { get; set; } = string.Empty;
+        public string ActionText { get; set; } = string.Empty;
+    }
+}

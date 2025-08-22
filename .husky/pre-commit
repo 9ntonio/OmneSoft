@@ -1,0 +1,2 @@
+# Run lint-staged for JavaScript/CSS/HTML files
+npx lint-staged

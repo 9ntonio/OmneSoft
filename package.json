@@ -5,7 +5,17 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build-css": "tailwindcss -i ./OmneSoft/wwwroot/app.css -o ./OmneSoft/wwwroot/app.min.css --watch"
+    "build-css": "postcss ./wwwroot/css/app.css -o ./wwwroot/css/app.min.css --watch",
+    "build-css-prod": "NODE_ENV=production postcss ./wwwroot/css/app.css -o ./wwwroot/css/app.min.css",
+    "dev": "npm run build-css-prod && dotnet run",
+    "start": "npm run build-css-prod && dotnet run",
+    "build": "npm run build-css-prod && dotnet build",
+    "publish": "npm run build-css-prod && dotnet publish",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -19,9 +29,33 @@
     "url": "https://github.com/9ntonio/OmneSoft/issues"
   },
   "homepage": "https://github.com/9ntonio/OmneSoft#readme",
+  "lint-staged": {
+    "*.{js,mjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{css,html,json,md}": [
+      "prettier --write"
+    ],
+    "*.{razor,cs}": [
+      "dotnet format --include"
+    ]
+  },
   "devDependencies": {
+    "@eslint/js": "^9.33.0",
     "autoprefixer": "^10.4.21",
+    "cssnano": "^7.1.0",
+    "eslint": "^9.33.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.5",
     "postcss": "^8.4.47",
+    "postcss-cli": "^11.0.1",
+    "prettier": "^3.6.2",
     "tailwindcss": "^3.4.17"
+  },
+  "dependencies": {
+    "ag-grid-community": "^33.3.2"
   }
 }
