@@ -1,609 +1,180 @@
 # OmneSoft
 
-A modern Blazor WebAssembly application built with .NET 8, featuring comprehensive user management capabilities with advanced data grid functionality and centralized state management.
+A modern Blazor WebAssembly application built with .NET 8, featuring comprehensive user management with advanced data grid functionality and intelligent state management.
 
 ## Features
 
-- **Professional User Management Interface**: Clean, modern layout with dedicated header section and optimized content area for enhanced user experience
-- **Branded Application Header**: Professional header with "Users Management" branding, integrated navigation controls, and error simulation toggle
-- **Dynamic Viewport Layout**: Streamlined layout with proper content organization and visual hierarchy using full-height containers for optimal space utilization
-- **Advanced UsersGrid Component**: Production-ready grid component with comprehensive error handling, data loading, retry mechanisms, enhanced refresh functionality with grid state reset, stable v33.3.2 configuration with Quartz theme, explicit DOM layout control, and state integration
-- **AG Grid Integration**: Advanced data grid with sorting, filtering, selection capabilities, stable v33.3.2 API with correct createGrid method, intelligent value formatters for complex data types (arrays, dates), simplified configuration approach relying on AG Grid Community Edition defaults, explicit DOM layout control with dedicated CSS container classes, and viewport-based responsive sizing
-- **User Management Data**: Comprehensive user dataset with 40+ superhero-themed records including roles, licenses, and status tracking
-- **Production-Ready Error Handling**: Comprehensive HTTP error scenarios with user-friendly messages and retry mechanisms
-- **Network Resilience**: Handles connection failures, timeouts, and various server error conditions
-- **Error Simulation Testing**: Comprehensive error simulation system cycling through 5 error types with lifecycle-aware parameter change detection, automatic grid data refresh, and clean state transitions
-- **Modern UI Components**: Custom Button and UsersGrid components with Tailwind CSS styling and consistent design patterns
-- **Intelligent Loading States & User Feedback**: Animated indicators, contextual messages, full-height loading states, smart global loader suppression, and comprehensive triple-layer state management for all async operations across components and pages
-- **Intelligent State Management**: Enhanced AppStateService with reactive patterns, component loading awareness, smart global loader suppression, and unified loading coordination across all application components
-- **Service Integration**: Dependency injection with scoped services for HttpClient and state management
-- **JavaScript Interop**: Robust JavaScript interoperability with AG Grid v33.3.2 using the correct createGrid API method with backward compatible selection modes, deprecated option removal, refined console warning management, and comprehensive grid validation for optimal compatibility
-- **Enhanced Accessibility Features**: WCAG-compliant components with proper focus management, semantic HTML, ARIA attributes, improved row identification for screen readers, and v33-compatible grid configuration
-- **Responsive Design**: Professional layout that adapts to any screen size with Tailwind CSS and optimized viewport calculations
-- **Professional Branding**: Branded header with "Users Management" title and technology stack footer for enhanced user experience
-- **Code Quality**: ESLint, Prettier, and Husky pre-commit hooks for consistent code formatting, with modern C# control flow patterns and structured error handling for better maintainability
+- **Professional User Interface**: Clean, modern layout with branded header, optimized content areas, and responsive design
+- **Advanced Data Grid**: AG Grid v33.3.2 integration with sorting, filtering, selection, and intelligent value formatters
+- **Comprehensive Error Handling**: Production-ready error scenarios with user-friendly messages, retry mechanisms, and error simulation testing
+- **Intelligent State Management**: Enhanced AppStateService with reactive patterns, smart loading coordination, and component awareness
+- **Modern UI Components**: Custom Button and UsersGrid components with Tailwind CSS styling and accessibility features
+- **JavaScript Interop**: Robust AG Grid integration with proper lifecycle management and WCAG compliance
+- **Code Quality**: ESLint, Prettier, and Husky pre-commit hooks with modern C# patterns
 
 ## Tech Stack
 
 - **Frontend**: Blazor WebAssembly (.NET 8.0.8 LTS)
-- **Component Architecture**: Streamlined UI component structure with focused namespaces for optimal organization
-- **State Management**: Enhanced AppStateService with reactive patterns, component loading awareness, intelligent loader suppression, and comprehensive triple-layer loading coordination
-- **Dependency Injection**: Built-in .NET DI container with scoped services
-- **Styling**: Tailwind CSS v3.4.17 with PostCSS processing and autoprefixer
-- **Data Grid**: AG Grid Community Edition v33.3.2 (CDN-hosted) with native Quartz theme integration, fixed-height strategy for reliability, and stable configuration using correct createGrid API
-- **JavaScript Interop**: Custom interop functions for AG Grid v33.3.2 integration using correct createGrid API with backward compatible selection modes, deprecated option cleanup, refined console warning suppression, intelligent value formatters for complex data types, enhanced accessibility features including ARIA support and screen reader optimization, and comprehensive grid state validation
+- **State Management**: Custom AppStateService with reactive patterns
+- **Styling**: Tailwind CSS v3.4.17 with PostCSS and autoprefixer
+- **Data Grid**: AG Grid Community Edition v33.3.2 (CDN-hosted)
 - **HTTP Client**: Configured HttpClient with 30-second timeout
-- **Build Tools**: npm scripts with automated CSS building and .NET integration
-- **Code Quality**: ESLint v9.33.0, Prettier v3.6.2, Husky v9.1.7, lint-staged v16.1.5
-- **CSS Processing**: PostCSS v8.4.47 with cssnano v7.1.0 for production minification
-- **Package Management**: npm for frontend dependencies, NuGet for .NET packages
-- **Development Environment**: VS Code workspace configuration for optimal development experience
+- **Code Quality**: ESLint v9.33.0, Prettier v3.6.2, Husky v9.1.7
+- **Build Tools**: npm scripts with automated CSS building
+- **Package Management**: npm for frontend, NuGet for .NET packages
 
-## Technical Decisions
+## Architecture
 
-### Code Quality & Reliability Improvements
+### State Management
 
-**Enhanced Error Simulation & Grid Lifecycle System**: The UsersGrid component features a robust error simulation system with intelligent parameter change detection, comprehensive grid lifecycle management, and optimized state transitions:
-
-- **Smart Parameter Detection**: Intelligent detection of `SimulateErrors` parameter changes using `OnParametersSetAsync()` with proper initialization state tracking
-- **Lifecycle-Aware Updates**: Only processes parameter changes after grid initialization to prevent unnecessary operations during component startup
-- **Clean State Transitions**: Complete grid destruction and recreation when switching off error simulation to ensure pristine component state
-- **Extended DOM Update Timing**: 100ms delays for DOM cleanup/update operations to ensure reliable grid initialization after state changes
-- **Automatic Data Refresh**: Grid data automatically refreshes when error simulation mode is toggled, with immediate UI updates via `StateHasChanged()`
-- **Initialization State Tracking**: Maintains `previousSimulateErrors` tracking variable to detect actual parameter changes and prevent redundant operations
-- **Error Counter Management**: Automatic reset of error simulation counter when switching to normal mode for predictable behavior
-- **Comprehensive Error Cycling**: Error simulation cycles through 5 different error types (network, timeout, JSON parsing, 404, unexpected) for thorough testing
-- **Debug Logging**: Console logging for parameter changes, data loading operations, and component lifecycle events to aid in development and troubleshooting
-- **Clean Control Flow**: Streamlined conditional logic with proper finally block execution and resource cleanup
-- **Comprehensive Error Handling**: Built-in handling for network failures, timeouts, JSON parsing errors, HTTP status codes, and unexpected exceptions
-- **Proper Resource Management**: Error simulation ensures proper execution of finally blocks and cleanup of loading states
-- **Grid State Coordination**: Parameter changes trigger appropriate grid updates or complete recreation based on current component state
-
-### AG Grid CSS Optimization & Height Configuration
-
-**Critical AG Grid v33 Community Edition Height Issue**: AG Grid Community Edition v33.3.2 has known issues with percentage-based heights that can cause rendering problems, grid collapse, or incorrect sizing. This application implements a **fixed-height strategy** to ensure reliable grid rendering:
-
-**Streamlined Grid Container Management**: The application uses a minimal CSS approach that relies on AG Grid's built-in Quartz theme while ensuring reliable container sizing:
-
-- **Fixed Height Strategy**: Uses `500px` default height and `calc(100vh - 200px)` for viewport-based sizing instead of percentage heights
-- **Percentage Height Prevention**: Component automatically converts percentage heights to fixed `500px` to prevent AG Grid v33 rendering issues
-- **Reliable Rendering**: `!important` declarations ensure grid dimensions are consistently applied regardless of CSS specificity conflicts
-- **Responsive Design**: Minimum height constraints (`500px`) prevent grid collapse on smaller screens while maintaining usability
-- **Universal Container Class**: `.ag-grid-container` class provides consistent styling for any AG Grid instance in the application
-- **Native Theme Integration**: Relies on AG Grid's built-in Quartz theme for styling, reducing CSS complexity and maintenance overhead
-- **Cross-Browser Compatibility**: Explicit width and height declarations ensure consistent behavior across different browsers and devices
-
-**Simplified CSS Implementation:**
-
-```css
-/* AG Grid v33 Theming API - Container styles only */
-.ag-grid-container {
-  min-height: 400px;
-}
-
-/* Ensure proper grid sizing - no percentages for AG Grid v33 */
-#users-grid {
-  height: calc(100vh - 200px) !important;
-  min-height: 500px !important;
-  width: 100% !important;
-  position: relative;
-}
-
-.ag-grid-container {
-  height: calc(100vh - 200px) !important;
-  min-height: 500px !important;
-  width: 100% !important;
-  position: relative;
-}
-```
-
-**Component Height Management:**
+The application uses a custom `AppStateService` for intelligent state coordination:
 
 ```csharp
-// UsersGrid automatically prevents percentage heights
-private string GetGridContainerStyle()
-{
-    // For other grids, ensure no percentage heights
-    var height = Height.Contains("%") ? "500px" : Height;
-    var width = Width.Contains("%") ? "100%" : Width; // Width percentages are OK
-    return $"height: {height}; width: {width};";
-}
-```
-
-### AG Grid Value Formatters & Data Type Handling
-
-**Intelligent Value Formatters for Complex Data Types**: The JavaScript interop layer automatically applies value formatters to handle complex data types and prevent AG Grid v33 warnings:
-
-**Array Field Formatting (Roles)**:
-
-```javascript
-// Handle roles array field
-if (
-  colDef.field === 'roles' &&
-  !colDef.valueFormatter &&
-  !colDef.cellRenderer
-) {
-  colDef.valueFormatter = function (params) {
-    if (params.value && Array.isArray(params.value)) {
-      return params.value.join(', ');
-    }
-    return params.value || '';
-  };
-}
-```
-
-**Date Field Formatting (Last Active)**:
-
-```javascript
-// Handle lastActive date field
-if (
-  colDef.field === 'lastActive' &&
-  !colDef.valueFormatter &&
-  !colDef.cellRenderer
-) {
-  colDef.valueFormatter = function (params) {
-    if (params.value) {
-      try {
-        const date = new Date(params.value);
-        return (
-          date.toLocaleDateString() +
-          ' ' +
-          date.toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        );
-      } catch (e) {
-        return params.value;
-      }
-    }
-    return '';
-  };
-}
-```
-
-**Key Benefits:**
-
-- **Prevents AG Grid v33 Warnings**: Eliminates console warnings about complex data types in grid cells
-- **Automatic Detection**: Only applies formatters when no existing formatter or cell renderer is present
-- **Graceful Fallbacks**: Handles null/undefined values and parsing errors gracefully
-- **Localized Formatting**: Uses browser's locale settings for date/time display
-- **Performance Optimized**: Minimal overhead with efficient type checking and formatting logic
-
-### Performance & Efficiency Optimizations
-
-This project implements several performance-first strategies for maximum efficiency:
-
-#### Component Lifecycle Optimization
-
-- **Synchronous initialization** for non-async operations (state subscriptions, event handlers)
-- **Async operations** only when necessary (data loading, HTTP requests, JS interop)
-- **Proper disposal patterns** with `IAsyncDisposable` for cleanup of subscriptions and resources
-- **Memory leak prevention** through systematic unsubscription from events
-
-#### System Font Strategy
-
-The application uses a **system font-first approach** (`font-sans` in Tailwind CSS) that leverages the user's operating system default fonts instead of loading custom web fonts. This provides:
-
-- **Zero network requests** for font loading
-- **Instant text rendering** with no font loading delays
-- **Optimal readability** using fonts designed for each platform
-- **Reduced bundle size** by eliminating font file downloads
-- **Better performance** especially on slower connections
-
-#### CSS & Asset Optimization
-
-- **Production CSS minification** with cssnano during build process
-- **Tailwind CSS purging** removes unused styles, dramatically reducing CSS bundle size
-- **PostCSS autoprefixer** ensures cross-browser compatibility without manual vendor prefixes
-- **Automated CSS builds** integrated into .NET build pipeline for seamless development
-- **Streamlined AG Grid CSS** with minimal container classes and fixed-height strategy using `!important` declarations for reliable grid rendering
-- **Native Theme Integration** relies on AG Grid's built-in Quartz theme, reducing CSS complexity and maintenance overhead
-- **AG Grid v33 Height Fix** with automatic percentage-to-fixed height conversion to prevent Community Edition rendering issues
-- **Responsive Grid Containers** with `calc(100vh - 200px)` height calculations and minimum height constraints for consistent display across devices
-
-#### JavaScript Efficiency
-
-- **CDN-hosted AG Grid** reduces bundle size and leverages browser caching
-- **Modular interop functions** prevent loading unnecessary JavaScript with dedicated `users-interop.js`
-- **Modern ES6+ syntax** for better performance and smaller code
-- **Error boundaries** with proper logging for production debugging
-- **Grid lifecycle management** with proper creation, destruction, and resource cleanup
-- **Enhanced ARIA compliance** with improved row identification, screen reader optimization, and accessibility-focused grid configuration including proper focus management and semantic structure validation
-- **Modern AG Grid v33 API** with backward compatible selection modes ('single'/'multiple'), automatic cleanup of deprecated v32 options, and streamlined grid configuration
-- **Backward Compatibility Handling** with preservation of existing `rowSelection` values ('single'/'multiple') that remain functional in v33 Community Edition
-- **Grid State Validation** with comprehensive validation functions that ensure proper ARIA attributes, semantic structure, and accessibility compliance across all grid instances
-- **Intelligent Value Formatters** with automatic handling of complex data types including array fields (roles) and date fields (lastActive) to prevent AG Grid v33 warnings and ensure proper data display
-- **Correct AG Grid API** using v33.3.2 createGrid method with backward compatible selection modes, deprecated option removal, and accessibility improvements including ARIA-compliant row identification and screen reader support
-
-#### .NET WebAssembly Optimizations
-
-- **Scoped HttpClient** with 30-second timeout prevents hanging requests
-- **Minimal service registration** reduces startup overhead with focused DI container configuration
-- **Development-only logging** prevents performance impact in production builds
-- **Blazor WebAssembly** eliminates server round-trips for UI interactions
-- **Optimized Build Configuration** with warnings treated as errors for code quality enforcement
-- **AOT Compilation Disabled** for faster development builds while maintaining production flexibility
-
-#### Build & Development Efficiency
-
-- **Integrated build pipeline** automatically builds Tailwind CSS before .NET compilation
-- **Environment-aware PostCSS** applies minification only in production builds
-- **Pre-commit hooks** with Husky ensure code quality without manual intervention
-- **Lint-staged optimization** runs linters only on changed files, not entire codebase
-- **npm script automation** combines CSS building with .NET commands for streamlined workflow
-- **VS Code Integration** with workspace settings for consistent development environment
-- **Multi-format Linting** supports JavaScript, CSS, HTML, JSON, Markdown, Razor, and C# files
-
-### State Management Architecture
-
-The application implements a **hybrid state management pattern** combining centralized global state with component-specific state management using a custom `AppStateService` that provides:
-
-- **Reactive State Updates**: Components subscribe to state changes via event notifications
-- **Intelligent Loading Management**: Dual-layer loading state system with global and component-level coordination
-- **Global Loading States**: Centralized loading indicators for cross-component coordination
-- **Component Loading Awareness**: Tracks when components show their own loading UI to prevent duplicate indicators
-- **Smart Loader Suppression**: Automatically hides global loader when components handle their own loading states
-- **Component-Specific States**: Local state management for component-specific UI behaviors
-- **Service Integration**: Seamless integration with dependency injection container
-- **Performance Optimization**: Only notifies subscribers when state actually changes
-- **Type Safety**: Strongly-typed state properties with compile-time checking
-- **Automatic UI Updates**: Components automatically re-render when subscribed state changes
-- **Memory Leak Prevention**: Proper subscription cleanup in component disposal
-
-#### Service Registration
-
-```csharp
-// Program.cs
+// Service Registration
 builder.Services.AddScoped<IAppStateService, AppStateService>();
-```
 
-#### AppStateService API
-
-The enhanced AppStateService provides the following properties and methods for intelligent loading state management:
-
-**Properties:**
-
-- `bool IsLoading` - Indicates if any global loading operation is active
-- `bool HasComponentLoading` - Tracks if components are showing their own loading UI
-- `bool ShowGlobalLoader` - Computed property that returns `true` only when there's global loading but no component-level loading
-- `event Action? OnChange` - Event fired when any state property changes
-
-**Methods:**
-
-- `SetLoading(bool isLoading)` - Sets the global loading state for cross-component coordination
-- `SetComponentLoading(bool hasComponentLoading)` - Controls component loading awareness to suppress global loader
-- `NotifyStateChanged()` - Manually triggers state change notifications to all subscribers
-
-**Usage Pattern:**
-
-```csharp
-// Component with its own loading UI
-AppState.SetLoading(true);           // Coordinate with other components
-AppState.SetComponentLoading(true);  // Suppress global loader
-// ... async operations ...
-AppState.SetLoading(false);          // Clear global state
-AppState.SetComponentLoading(false); // Re-enable global loader
-
-// Global loader in layout
-@if (AppState.ShowGlobalLoader)
-{
-    <!-- Only shows when no components are handling their own loading -->
-}
-```
-
-#### Intelligent Loading State Management Pattern
-
-Components integrate with the AppStateService using an intelligent dual-layer approach that prevents duplicate loading indicators while maintaining proper state coordination:
-
-```csharp
-@using OmneSoft.Services
+// Component Integration
 @inject IAppStateService AppState
 @implements IDisposable
 
-@code {
-    private bool isLoading = false; // Component-specific loading state
+protected override void OnInitialized()
+{
+    AppState.OnChange += StateHasChanged;
+}
 
-    protected override void OnInitialized()
+private async Task LoadData()
+{
+    isLoading = true;
+    AppState.SetLoading(true);
+    AppState.SetComponentLoading(true); // Suppress global loader
+
+    try
     {
-        // Subscribe to automatic state change notifications
-        AppState.OnChange += StateHasChanged;
+        // Load operations...
     }
-
-    private async Task LoadData()
+    finally
     {
-        // Set component loading state and suppress global loader
-        isLoading = true;                    // For component-specific UI (buttons, opacity)
-        AppState.SetLoading(true);           // For global coordination (other components)
-        AppState.SetComponentLoading(true);  // Suppress global loader to prevent duplicates
-
-        try
-        {
-            // Load data operations...
-        }
-        finally
-        {
-            // Clear all loading states
-            isLoading = false;                    // Component UI returns to normal
-            AppState.SetLoading(false);           // Global state cleared
-            AppState.SetComponentLoading(false);  // Re-enable global loader for other operations
-        }
+        isLoading = false;
+        AppState.SetLoading(false);
+        AppState.SetComponentLoading(false);
     }
+}
 
-    public void Dispose()
-    {
-        // Prevent memory leaks by unsubscribing
-        AppState.OnChange -= StateHasChanged;
-    }
+public void Dispose()
+{
+    AppState.OnChange -= StateHasChanged;
 }
 ```
 
-#### UsersGrid Component Parameters
+### AG Grid Integration
 
-The `UsersGrid` component provides flexible configuration options for optimal integration:
+**Fixed Height Strategy**: AG Grid v33.3.2 Community Edition has issues with percentage heights. This app uses fixed heights for reliable rendering:
 
-```csharp
-[Parameter] public string ContainerId { get; set; } = Guid.NewGuid().ToString();
-[Parameter] public string Height { get; set; } = "500px";  // Fixed height (percentages auto-converted)
-[Parameter] public string Width { get; set; } = "100%";   // Width percentages work correctly
-[Parameter] public EventCallback<object> OnRowClicked { get; set; }
-[Parameter] public EventCallback<object[]> OnSelectionChanged { get; set; }
-[Parameter] public bool EnableSelection { get; set; } = true;
-[Parameter] public string SelectionMode { get; set; } = "single";
-[Parameter] public string DataUrl { get; set; } = "data/users.json";
-[Parameter] public bool SimulateErrors { get; set; } = false;
+```css
+.ag-grid-container {
+  height: calc(100vh - 200px) !important;
+  min-height: 500px !important;
+  width: 100% !important;
+}
 ```
 
-**Key Parameter Features:**
+**Intelligent Value Formatters**: Automatically handles complex data types:
 
-- **Fixed Height Strategy**: Defaults to `500px` and automatically converts percentage heights to fixed values to prevent AG Grid v33 rendering issues
-- **Responsive Width**: Defaults to `100%` for full container width utilization (width percentages work correctly)
-- **Intelligent Error Simulation**: Real-time error simulation toggle with lifecycle-aware parameter change detection, automatic grid data refresh, and complete grid recreation for clean state transitions
-- **Event Callbacks**: Row click and selection change events for interactive functionality
-- **Native AG Grid Theming**: Uses AG Grid's built-in Quartz theme with minimal CSS overrides for professional appearance and reduced maintenance
+```javascript
+// Array formatting (roles)
+colDef.valueFormatter = function (params) {
+  if (params.value && Array.isArray(params.value)) {
+    return params.value.join(', ');
+  }
+  return params.value || '';
+};
+
+// Date formatting (lastActive)
+colDef.valueFormatter = function (params) {
+  if (params.value) {
+    const date = new Date(params.value);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+  }
+  return '';
+};
+```
+
+### Error Handling
+
+Comprehensive error simulation system with 5 error types:
+
+- Network failures
+- Timeouts
+- JSON parsing errors
+- 404 responses
+- Unexpected server errors
+
+Components feature intelligent parameter change detection and automatic grid state reset for clean error simulation transitions.
 
 ## Project Structure
 
-The application follows a clean, organized structure with streamlined component namespaces for optimal maintainability:
-
 ```
 OmneSoft/
-├── Components/
-│   └── UI/                    # Reusable UI components
-│       ├── Button.razor       # Custom button component with variants
-│       └── UsersGrid.razor    # Advanced data grid component
+├── Components/UI/           # Reusable UI components
+│   ├── Button.razor        # Custom button with variants
+│   └── UsersGrid.razor     # Advanced data grid component
 ├── Pages/
-│   └── Home.razor            # Main users management page
+│   └── Home.razor         # Main users management page
 ├── Services/
-│   ├── IAppStateService.cs   # State management interface
-│   └── AppStateService.cs    # Reactive state management implementation
-├── Models/
-│   └── AppSettings.cs        # Application configuration models
+│   ├── IAppStateService.cs # State management interface
+│   └── AppStateService.cs  # Reactive state implementation
 ├── wwwroot/
-│   ├── css/
-│   │   ├── app.css          # Tailwind CSS with AG Grid customizations
-│   │   └── app.min.css      # Production minified CSS
-│   ├── js/
-│   │   ├── app.js           # Main application JavaScript
-│   │   ├── interop.js       # General JavaScript interop functions
-│   │   └── users-interop.js # AG Grid specific interop functions
-│   └── data/
-│       └── users.json       # Sample user data
-├── _Imports.razor            # Global namespace imports (UI components only)
-├── MainLayout.razor          # Application layout component
-├── App.razor                # Root application component
-└── Program.cs               # Application entry point and DI configuration
+│   ├── css/app.css        # Tailwind CSS with AG Grid styles
+│   ├── js/users-interop.js # AG Grid JavaScript interop
+│   └── data/users.json    # Sample user data
+├── MainLayout.razor       # Application layout
+└── Program.cs            # Entry point and DI configuration
 ```
 
-### Namespace Organization
+## Components
 
-The project uses a simplified namespace structure focused on essential components:
+### Button Component
 
-- **`OmneSoft.Components.UI`**: Core UI components (Button, UsersGrid)
-- **`OmneSoft.Services`**: Application services and state management
-- **`OmneSoft.Pages`**: Page components and routing
-- **`OmneSoft.Models`**: Data models and configuration
+Versatile button with variants (Primary, Secondary, Success, Danger), sizes, loading states, and accessibility support.
 
-The `_Imports.razor` file includes only the necessary namespaces, ensuring clean component imports without unused references. The Layout namespace has been removed to maintain a focused component architecture.
+### UsersGrid Component
 
-### Component Integration Examples
+Advanced data grid with AG Grid v33.3.2 integration featuring:
 
-Both the `UsersGrid` component and `Home` page demonstrate comprehensive AppStateService integration with optimized loading state management and enhanced refresh functionality:
+**Parameters:**
 
 ```csharp
-@inject IAppStateService AppState
-
-@if (isLoading)
-{
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-4">
-        <div class="flex items-center">
-            <svg class="animate-spin w-6 h-6 text-blue-600 mr-3">...</svg>
-            <span class="text-blue-800 font-medium">Loading...</span>
-        </div>
-    </div>
-}
-
-@code {
-    private bool isLoading = false;
-
-    protected override void OnInitialized()
-    {
-        // Synchronous subscription - no async needed for event registration
-        AppState.OnChange += StateHasChanged;
-    }
-
-    private async Task LoadUsers()
-    {
-        isLoading = true;           // Component-specific loading state (shows component loader)
-        AppState.SetLoading(true);  // Global loading state for coordination (but we'll suppress app loader)
-        errorState = null;
-
-        try
-        {
-            // Add realistic loading delay
-            await Task.Delay(1000);
-
-            // HTTP operations with comprehensive error handling
-            var response = await HttpClient.GetAsync(DataUrl);
-            // ... error handling for various HTTP status codes
-        }
-        finally
-        {
-            isLoading = false;          // Clear component loading state
-            AppState.SetLoading(false); // Clear global loading state
-
-            // Initialize grid if data loaded successfully and no error state
-            if (errorState == null && usersData != null && !isGridInitialized)
-            {
-                StateHasChanged(); // Update UI first
-                await Task.Delay(50); // Small delay for DOM update
-                await InitializeGrid();
-            }
-            else
-            {
-                StateHasChanged();
-            }
-        }
-    }
-
-    public async Task RefreshData()
-    {
-        // Reset grid state to ensure clean initialization
-        if (isGridInitialized)
-        {
-            try
-            {
-                await JSRuntime.InvokeVoidAsync("usersInterop.destroyGrid", ContainerId);
-            }
-            catch
-            {
-                // Ignore errors during cleanup
-            }
-            isGridInitialized = false;
-        }
-
-        await LoadUsers();
-        if (errorState == null && usersData != null)
-        {
-            // Force a re-render to show the grid container
-            StateHasChanged();
-            // Small delay to ensure DOM is updated
-            await Task.Delay(50);
-            await InitializeGrid();
-        }
-    }
-
-    public void Dispose()
-    {
-        // Prevent memory leaks by unsubscribing
-        AppState.OnChange -= StateHasChanged;
-
-        // Dispose of .NET object reference
-        dotNetRef?.Dispose();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        // Cleanup JS interop resources
-        if (isGridInitialized)
-        {
-            await JSRuntime.InvokeVoidAsync("usersInterop.destroyGrid", ContainerId);
-        }
-
-        // Call synchronous dispose
-        Dispose();
-    }
-}
+[Parameter] public string Height { get; set; } = "500px";  // Fixed height strategy
+[Parameter] public string Width { get; set; } = "100%";
+[Parameter] public bool SimulateErrors { get; set; } = false;
+[Parameter] public string SelectionMode { get; set; } = "single";
+[Parameter] public EventCallback<object> OnRowClicked { get; set; }
 ```
 
-## Component Architecture
+**Key Features:**
 
-### UI Components
+- Intelligent error simulation with lifecycle-aware parameter detection
+- Automatic grid state reset during refresh operations
+- WCAG-compliant accessibility with ARIA attributes
+- Fixed-height strategy to prevent AG Grid v33 rendering issues
+- Loading operations with visual feedback
 
-The application uses a streamlined component architecture with focused namespaces:
+#### Loading State Management
 
-#### Button Component (`Components/UI/Button.razor`)
+The application implements a **triple-layer loading state approach** with intelligent global loader suppression:
 
-A versatile, reusable button component with multiple variants and states:
+**Three Loading Layers:**
 
-- **Variants**: Primary, Secondary, Success, Danger
-- **Sizes**: Small, Medium, Large
-- **States**: Loading, Disabled
-- **Features**: Smooth animations, hover effects, accessibility support
-
-```csharp
-<Button Variant="ButtonVariant.Primary"
-        Size="ButtonSize.Medium"
-        IsLoading="@isLoading"
-        OnClick="HandleClick">
-    Click Me
-</Button>
-```
-
-#### UsersGrid Component (`Components/UI/UsersGrid.razor`)
-
-Advanced data grid component with comprehensive features:
-
-- **AG Grid v33.3.2 Integration**: Modern data grid with sorting, filtering, selection
-- **Error Handling**: Comprehensive error states with retry mechanisms
-- **Loading States**: Intelligent loading indicators with state coordination
-- **Accessibility**: WCAG-compliant with proper ARIA attributes
-- **Responsive Design**: Fixed-height strategy for reliable rendering
-
-### Benefits of Enhanced AppStateService Integration
-
-- **No Manual StateHasChanged()**: Components automatically re-render when state changes
-- **Intelligent Loader Management**: Prevents duplicate loading indicators through component loading awareness
-- **Smart Global Loader Suppression**: Automatically hides global loader when components show their own loading UI
-- **Triple Loading State Coordination**: Components maintain local loading states while coordinating with global state and suppressing duplicate loaders
-- **Cross-Component Loading Awareness**: Both page-level and component-level operations coordinate seamlessly
-- **Unified Loading Pattern**: Consistent implementation across UsersGrid component and Home page refresh functionality
-- **Global Loading Awareness**: Other components can react to loading states across the app
-- **Centralized State**: Single source of truth for application-wide state
-- **Performance Optimized**: Only triggers updates when state actually changes
-- **Memory Safe**: Proper subscription cleanup prevents memory leaks
-- **Lifecycle Optimized**: Synchronous initialization for event subscriptions, async only when needed
-- **Resource Management**: Comprehensive disposal patterns for JS interop and .NET object references
-- **Enhanced Refresh Functionality**: Grid state reset ensures clean re-initialization during refresh operations
-- **Automatic Grid Initialization**: Improved finally block logic ensures grid initialization occurs automatically after successful data loading
-- **Debug Traceability**: Console logging for data loading operations provides clear visibility into component lifecycle and async operations
-- **Button State Management**: Refresh buttons automatically disable during loading operations with visual feedback
-
-#### Intelligent Loading State Management Strategy
-
-The application implements a **comprehensive triple-layer loading state approach** with intelligent global loader suppression across all components for optimal user experience:
-
-**Local Loading State (`isLoading`/`isRefreshing`)**:
-
-- Controls component-specific UI elements (button states, grid visibility, retry button styling)
-- Provides immediate visual feedback without waiting for global state propagation
-- Used for conditional rendering of loading indicators, error states, and grid content
-- Ensures component UI remains responsive during async operations
-- **Requires manual `StateHasChanged()` calls** since local state changes are independent of global state management
-
-**Global Loading State (`AppState.SetLoading()`)**:
-
-- Coordinates loading states across multiple components
-- Enables other parts of the application to react to data loading operations
-- Maintains centralized awareness of application-wide loading activities
-- Supports global loading indicators and navigation restrictions
-- **Automatically triggers UI updates** via the AppStateService event system without manual `StateHasChanged()` calls
-
-**Component Loading Awareness (`AppState.SetComponentLoading()`)**:
-
-- Tracks when components are showing their own loading UI
-- Automatically suppresses global loading spinner to prevent duplicate indicators
-- Enables intelligent loader coordination across the application
-- Ensures clean user experience without conflicting loading states
-- **Smart suppression logic**: `ShowGlobalLoader` property returns `true` only when there's global loading but no component-level loading
+1. **Local Loading State** (`isLoading`/`isRefreshing`) - Component-specific UI control
+2. **Global Loading State** (`AppState.SetLoading()`) - Cross-component coordination
+3. **Component Loading Awareness** (`AppState.SetComponentLoading()`) - Prevents duplicate loaders
 
 ```csharp
-// Triple-layer loading state pattern in UsersGrid component
 private async Task LoadUsers()
 {
-    isLoading = true;                    // Component-specific loading state (shows component loader)
-    AppState.SetLoading(true);           // Global loading state for coordination
-    AppState.SetComponentLoading(true);  // Suppress global loader to prevent duplicates
+    isLoading = true;                    // Show component loader
+    AppState.SetLoading(true);           // Coordinate globally
+    AppState.SetComponentLoading(true);  // Suppress global loader
 
     try
     {
@@ -611,235 +182,83 @@ private async Task LoadUsers()
     }
     finally
     {
-        isLoading = false;                    // Component returns to normal state
-        AppState.SetLoading(false);           // Global state cleared
-        AppState.SetComponentLoading(false);  // Re-enable global loader for other operations
+        isLoading = false;
+        AppState.SetLoading(false);
+        AppState.SetComponentLoading(false);
     }
-}
-
-// Triple-layer loading state pattern in Home page component
-private async Task RefreshData()
-{
-    isRefreshing = true;                 // Component-specific loading state
-    AppState.SetLoading(true);           // Global loading state for coordination
-    AppState.SetComponentLoading(true);  // Suppress global loader since we show our own
-
-    try
-    {
-        await usersGrid.RefreshData();
-    }
-    finally
-    {
-        isRefreshing = false;                 // Clear component loading state
-        AppState.SetLoading(false);           // Clear global loading state
-        AppState.SetComponentLoading(false);  // Allow global loader to show again if needed
-    }
-}
-
-// Conditional rendering with intelligent loader management
-@if (errorState != null)
-{
-    <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-4">
-        <!-- Error state content -->
-    </div>
-}
-else if (isLoading)
-{
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-4">
-        <!-- Loading state content with component-specific loader -->
-    </div>
-}
-else
-{
-    <div id="@ContainerId" class="ag-theme-quartz" style="height: @Height; width: @Width;"></div>
-}
-
-// Global loader in main layout only shows when appropriate
-@if (AppState.ShowGlobalLoader)
-{
-    <!-- Global loading spinner - automatically suppressed when components show their own loaders -->
 }
 ```
 
-This approach ensures immediate component responsiveness, proper global state coordination, and intelligent loader suppression to prevent duplicate loading indicators while maintaining clean user experience across the entire application. The pattern is consistently implemented across both the UsersGrid component and the Home page for unified loading state management.
+This ensures immediate component responsiveness, proper global coordination, and prevents duplicate loading indicators.
 
-## Accessibility Enhancements
+## Accessibility Features
 
-The application implements comprehensive accessibility features to ensure WCAG compliance and optimal user experience for all users, including those using assistive technologies:
+The application implements comprehensive WCAG compliance features:
 
-#### AG Grid Accessibility Configuration
+**Key Features:**
 
-The JavaScript interop layer (`users-interop.js`) includes specific accessibility optimizations:
+- **Unique Row Identification**: `getRowId` function for screen reader compatibility
+- **Enhanced ARIA Support**: Proper attributes and semantic structure
+- **Keyboard Navigation**: Full accessibility without mouse dependency
+- **Screen Reader Optimization**: Compatible with NVDA, JAWS, and VoiceOver
+- **Automated Validation**: Built-in grid validation ensures consistent compliance
 
 ```javascript
-// Handle v33 Community Edition selection - keep original values
-// According to AG Grid v33 Community Edition docs, "single" and "multiple" still work
-// The new "singleRow" and "multiRow" may not be fully supported in Community Edition
-if (gridOptions.rowSelection === 'single' || gridOptions.rowSelection === 'multiple') {
-  console.log(`Using rowSelection: ${gridOptions.rowSelection} (AG Grid v33 Community Edition - deprecated but functional)`);
-}
-
-// Improve ARIA support with v33 compatible approach
+// AG Grid accessibility configuration
 if (!gridOptions.getRowId) {
   gridOptions.getRowId = params => params.data?.id || params.node.id;
 }
 
-// Remove deprecated v32 options that cause warnings in v33
-delete gridOptions.suppressMenuHide;
-delete gridOptions.suppressCellSelection;
-delete gridOptions.enableRangeSelection;
-delete gridOptions.animateRows;
-delete gridOptions.suppressRowClickSelection;
-
-// Comprehensive grid validation for accessibility compliance
+// Grid validation ensures proper ARIA structure
 validateGrid: function (containerId) {
-  // Ensures proper ARIA attributes, role assignments, and semantic structure
-  // Automatically validates and fixes common accessibility issues
-  // Returns true if grid passes validation, false otherwise
+  // Validates and fixes accessibility issues automatically
 }
 ```
-
-#### Key Accessibility Features
-
-- **Unique Row Identification**: Each grid row has a unique identifier for screen readers using the `getRowId` function
-- **Optimized Keyboard Navigation**: Disabled cell selection focuses keyboard navigation on row-level interactions
-- **Enhanced ARIA Support**: Proper ARIA attributes and semantic structure for assistive technologies
-- **Screen Reader Compatibility**: Optimized grid configuration specifically designed for screen reader users
-- **Focus Management**: Improved focus handling with proper row selection and navigation patterns
-- **Semantic HTML Structure**: Components use proper heading hierarchy and landmark elements
-- **Consistent Rendering**: Reliable grid initialization ensures consistent accessibility features across all browsers
-- **Grid State Validation**: Comprehensive validation system that automatically ensures proper ARIA attributes, role assignments, and semantic structure for all grid instances
-
-#### Implementation Benefits
-
-- **WCAG Compliance**: Meets Web Content Accessibility Guidelines for enterprise applications
-- **Screen Reader Support**: Optimized for popular screen readers including NVDA, JAWS, and VoiceOver
-- **Keyboard Navigation**: Full keyboard accessibility without mouse dependency
-- **Assistive Technology Integration**: Enhanced compatibility with various assistive technologies
-- **Inclusive Design**: Ensures usability for users with diverse accessibility needs
-- **Automated Validation**: Built-in grid validation ensures consistent accessibility compliance across all grid instances without manual intervention
 
 ### Layout Architecture
 
-The application implements an **optimized layout pattern** using Tailwind CSS and full-height containers for professional presentation:
+**Streamlined Layout Structure:**
 
-#### Streamlined Layout Structure
+- **Header**: Branded title, navigation controls, and error simulation toggle
+- **Main Content**: Flexible layout with full-height grid container
+- **Footer**: Technology stack information and branding
+- **Responsive Design**: Viewport-based calculations for optimal space utilization
 
-- **Header Section**: `bg-white shadow-sm border-b` with branded title, navigation controls, and error simulation toggle
-- **Main Content Area**: Flexible layout using `flex-1 p-8` with full height grid container (`h-full`) for optimal space utilization
-- **Dynamic Grid Sizing**: UsersGrid component uses viewport-based calculations (`calc(100vh - 200px)`) with dedicated CSS container classes for reliable sizing
-- **Footer Section**: `bg-white border-t` with technology stack information and branding
-- **Responsive Container**: `min-h-screen bg-gray-50 flex flex-col` ensures full viewport coverage with proper layout structure
+**Key Benefits:**
 
-#### Design Benefits
+- Professional appearance with clean visual hierarchy
+- Adaptive layout for different screen sizes
+- Semantic HTML structure for accessibility compliance
 
-- **Optimized Grid Display**: Viewport-based CSS calculations with `!important` declarations ensure reliable grid rendering and maximum space utilization
-- **Professional Appearance**: Clean visual hierarchy with proper spacing, shadows, and borders
-- **Consistent Branding**: Dedicated header space for application title and navigation elements
-- **Adaptive Layout**: Full-height containers automatically adjust to available screen space across different devices
-- **Informative Footer**: Technology stack display enhances credibility and provides useful information
-- **Accessibility Compliance**: Semantic HTML structure with proper heading hierarchy and navigation landmarks
-- **Interactive Controls**: Header includes refresh button and error simulation toggle for enhanced functionality
+### AG Grid v33.3.2 Configuration
 
-### AG Grid Community Edition v33.3.2 Configuration & Developer Notes
+The application uses AG Grid Community Edition v33.3.2 with specific configurations for reliability:
 
-The application uses AG Grid Community Edition v33.3.2 with specific configuration to address known issues, deprecation warnings, and ensure reliable rendering. This section provides comprehensive guidance for developers working with v33 Community Edition.
+**Key Configurations:**
 
-#### Theming API Configuration (v33 Breaking Change)
-
-**AG Grid v33 Theming API Migration**: AG Grid v33 introduced a new Theming API as the default styling method, replacing the legacy CSS file approach. The application has been configured to use the new Theming API to prevent styling conflicts.
-
-**Error Resolution**: If you encounter the error "Theming API and CSS File Themes are both used in the same page", this indicates a conflict between the new v33 Theming API and legacy CSS files. The application resolves this by:
-
-- **Removing Legacy CSS Files**: No longer includes `ag-theme-quartz.css` or `ag-theme-alpine.css` files
-- **Using Theming API Only**: Configures themes via JavaScript objects instead of CSS files
-- **Custom Theme Configuration**: Applies custom styling through the Theming API with proper v33 syntax
+- **Theming**: Uses built-in Quartz theme for professional appearance
+- **Selection**: Maintains backward-compatible 'single'/'multiple' modes
+- **Height Strategy**: Fixed heights to prevent rendering issues
 
 ```javascript
-// v33 Theming API configuration (replaces CSS theme files)
-gridOptions.theme = {
-  extends: 'themeQuartz',
-  spacing: 4,
-  rowHeight: 42,
-  headerHeight: 48,
-  fontSize: 14,
-  fontFamily: 'inherit',
-  borderRadius: 8,
-  borderColor: '#e5e7eb',
-  headerBackgroundColor: '#f9fafb',
-  rowHoverColor: '#f8fafc',
-  selectedRowBackgroundColor: '#dbeafe',
-};
+// v33 Community Edition configuration
+gridOptions.theme = 'themeQuartz';
+gridOptions.rowSelection = 'single'; // Deprecated but functional
 ```
 
-**Migration Benefits**:
+#### Height Configuration Solution
 
-- **No CSS Conflicts**: Eliminates theming conflicts between API and CSS files
-- **Better Performance**: Reduces CSS bundle size by removing theme files
-- **Modern Approach**: Uses the recommended v33 styling method
-- **Consistent Theming**: Ensures reliable theme application across all browsers
-
-#### Selection Mode Compatibility
-
-**Backward Compatible Selection Modes**: The JavaScript interop layer maintains compatibility with existing selection values while acknowledging v33 Community Edition behavior:
-
-```javascript
-// Handle v33 Community Edition selection - keep original values
-// According to AG Grid v33 Community Edition docs, "single" and "multiple" still work
-// The new "singleRow" and "multiRow" may not be fully supported in Community Edition
-if (
-  gridOptions.rowSelection === 'single' ||
-  gridOptions.rowSelection === 'multiple'
-) {
-  console.log(
-    `Using rowSelection: ${gridOptions.rowSelection} (AG Grid v33 Community Edition - deprecated but functional)`
-  );
-}
-```
-
-**Benefits of This Approach**:
-
-- **Maintains Functionality**: Uses the original 'single'/'multiple' values that still work in v33 Community Edition
-- **Avoids Breaking Changes**: No conversion needed, preserving existing component behavior
-- **Community Edition Compatible**: Acknowledges that newer selection modes may not be fully supported in Community Edition
-- **Clear Documentation**: Console output indicates the deprecated but functional status for debugging
-
-**Note**: This approach was updated from the previous automatic conversion strategy to maintain better compatibility with AG Grid Community Edition v33.3.2, where the newer selection modes may not be fully supported.
-
-#### Critical Height Configuration Issue
-
-**AG Grid v33 Community Edition Height Problem**: The Community Edition has documented issues with percentage-based heights that can cause:
-
-- Grid rendering failures
-- Incorrect sizing calculations
-- Grid collapse on certain browsers
-- Inconsistent behavior across different environments
-
-#### Solution Implementation
-
-**Fixed Height Strategy**: The application implements a comprehensive solution to prevent height-related issues:
+**Fixed Height Strategy**: Prevents AG Grid v33 percentage height issues:
 
 ```csharp
-// Component automatically converts percentage heights to fixed values
 private string GetGridContainerStyle()
 {
-    // Prevent AG Grid v33 percentage height issues
     var height = Height.Contains("%") ? "500px" : Height;
-    var width = Width.Contains("%") ? "100%" : Width; // Width percentages work fine
-    return $"height: {height}; width: {width};";
+    return $"height: {height}; width: {Width};";
 }
 ```
 
-**CSS Container Classes**: Dedicated CSS ensures reliable grid sizing:
-
 ```css
-/* Fixed height strategy for AG Grid v33 Community Edition */
-#users-grid {
-  height: calc(100vh - 200px) !important; /* Viewport-based calculation */
-  min-height: 500px !important; /* Minimum height fallback */
-  width: 100% !important; /* Width percentages work correctly */
-}
-
 .ag-grid-container {
   height: calc(100vh - 200px) !important;
   min-height: 500px !important;
@@ -847,253 +266,39 @@ private string GetGridContainerStyle()
 }
 ```
 
-#### AG Grid v33 Community Edition Deprecation Warnings & Solutions
+#### Developer Notes
 
-**Known Deprecation Issues**: AG Grid v33 Community Edition shows deprecation warnings for several properties that were deprecated in v32.2 but are still functional in Community Edition:
+**Deprecation Warnings**: The application suppresses known v33 Community Edition warnings for deprecated but functional properties.
 
-**Deprecated Properties (Still Working in Community Edition)**:
+**Best Practices:**
 
-- `rowSelection: "single"` / `rowSelection: "multiple"` → Preserved as-is (deprecated but functional in v33 Community Edition)
-- `suppressMenuHide`, `suppressCellSelection`, `suppressRowClickSelection` → Removed in favor of new APIs
-- `enableRangeSelection`, `animateRows` → Deprecated but functional in Community Edition
+- Use fixed heights for grid containers
+- Implement proper loading states and error boundaries
+- Test with error simulation enabled
+- Use built-in validation functions for ARIA structure
 
-**Console Warning Suppression**: The application includes targeted console warning suppression for known v33 Community Edition deprecation warnings:
+**Troubleshooting:**
 
-```javascript
-// Suppress specific AG Grid v33 Community Edition deprecation warnings
-console.warn = function (...args) {
-  const message = args.join(' ');
+- **Grid not rendering**: Check height configuration (avoid percentages)
+- **Selection issues**: Ensure `rowSelection` is "single" or "multiple"
+- **Performance**: Minimize column configuration, use AG Grid defaults
 
-  if (
-    message.includes('AG Grid: As of version 32.2.1, using "rowSelection"') ||
-    message.includes(
-      'AG Grid: As of v32.2, enableRangeSelection is deprecated'
-    ) ||
-    message.includes(
-      'AG Grid: As of v32.2, suppressCellSelection is deprecated'
-    ) ||
-    message.includes(
-      'AG Grid: As of v32.2, suppressRowClickSelection is deprecated'
-    ) ||
-    message.includes('AG Grid: As of v32.2, suppressMenuHide is deprecated') ||
-    message.includes('AG Grid: As of v32.2, animateRows is deprecated')
-  ) {
-    return; // Suppress these specific v33 Community Edition warnings
-  }
+### Interface Design
 
-  originalConsoleWarn.apply(console, args);
-};
-```
+**Streamlined approach focused on optimal user experience:**
 
-#### v33 Community Edition vs Enterprise Differences
-
-**Selection API**:
-
-- **Community Edition**: Uses `rowSelection: "single"/"multiple"` (deprecated but functional in v33)
-- **Enterprise Edition**: New `selection: { mode: "singleRow"/"multiRow" }` API available
-
-**Event Handling Changes in v33**:
-
-- **Automatic Cleanup**: Event listeners are automatically cleaned up by `destroy()` method
-- **Manual Cleanup**: No longer needed, may cause errors if attempted
-- **Callback Safety**: Enhanced error handling in event callbacks prevents crashes
-
-**Column API Deprecation**:
-
-- **Deprecated**: `columnApi` is deprecated in v33
-- **New Approach**: Use `gridApi.getColumns()` and `gridApi.autoSizeColumns()` directly
-
-#### Recommended v33 Community Edition Configuration
-
-**Working Configuration for v33 Community Edition**:
-
-```javascript
-const gridOptions = {
-  columnDefs: columnDefs,
-  rowData: rowData,
-  domLayout: 'normal',
-  rowSelection: 'single', // ✅ v33 Community Edition compatible (deprecated but functional)
-  defaultColDef: {
-    resizable: true,
-    sortable: true,
-    filter: true,
-    minWidth: 100,
-  },
-  // ❌ Avoid deprecated properties that cause console warnings
-  // suppressMenuHide: true,        // Deprecated in v32.2
-  // suppressCellSelection: true,   // Deprecated in v32.2
-  // enableRangeSelection: false,   // Deprecated in v32.2
-  // animateRows: true,             // Deprecated in v32.2
-  // suppressRowClickSelection: false, // Deprecated in v32.2
-
-  // ✅ v33 compatible options
-  suppressLoadingOverlay: false,
-  suppressNoRowsOverlay: false,
-  maintainColumnOrder: true,
-  getRowId: params => params.data?.id || params.node.id,
-};
-```
-
-**ARIA Accessibility Improvements for v33**:
-
-```javascript
-// Validate and fix ARIA structure after grid initialization
-setTimeout(() => {
-  const gridElement = container.querySelector('.ag-root');
-  if (gridElement && !gridElement.getAttribute('role')) {
-    gridElement.setAttribute('role', 'grid');
-  }
-
-  const headerElement = container.querySelector('.ag-header');
-  if (headerElement && !headerElement.getAttribute('role')) {
-    headerElement.setAttribute('role', 'rowgroup');
-  }
-}, 100);
-```
-
-#### Grid Configuration Best Practices
-
-**Height Configuration (Critical for v33)**:
-
-- ✅ **Fixed pixels**: `500px`, `600px`, `calc(100vh - 200px)`
-- ✅ **Viewport calculations**: `calc(100vh - 200px)`, `calc(100vh - 150px)`
-- ❌ **Percentage heights**: `100%`, `80%`, `50%` (automatically converted to `500px`)
-
-**Working Configuration**:
-
-- **Width**: Percentage values work correctly (`100%`, `80%`)
-- **Height**: Use fixed values or viewport calculations only
-- **Theme**: Quartz theme provides modern, professional appearance
-- **DOM Layout**: `normal` layout mode for standard grid behavior
-
-#### Troubleshooting Common v33 Community Edition Issues
-
-**Console Warnings**:
-
-- **Issue**: "AG Grid: As of version 32.2.1, using rowSelection with the values 'single' or 'multiple' has been deprecated"
-- **Solution**: The application preserves the original 'single' and 'multiple' values which remain functional in v33 Community Edition, acknowledging their deprecated status.
-
-**Grid Not Rendering**:
-
-- **Issue**: Grid container appears empty or collapsed
-- **Solution**: Check height configuration. Ensure using fixed heights or viewport calculations, not percentages.
-
-**ARIA Warnings**:
-
-- **Issue**: "AG Grid: ARIA attributes missing" or similar accessibility warnings
-- **Solution**: The application includes automatic ARIA attribute validation and correction after grid initialization.
-
-**Selection Not Working**:
-
-- **Issue**: Row selection callbacks not firing
-- **Solution**: Ensure `rowSelection` is set to "single" or "multiple" (deprecated but functional) and callbacks are properly configured with error handling.
-
-**Performance Issues**:
-
-- **Issue**: Slow grid rendering or interaction
-- **Solution**: Use minimal column configuration, avoid custom cell renderers, and ensure proper container sizing.
-
-**Memory Leaks**:
-
-- **Issue**: Grid instances not properly cleaned up
-- **Solution**: Always call `destroyGrid()` in component disposal. Event listeners are automatically cleaned up in v33.
-
-#### Developer Tips for v33 Community Edition
-
-**Best Practices**:
-
-- Use the provided console warning suppression to reduce noise during development
-- Test grid behavior with error simulation enabled to verify error handling
-- Always use fixed heights for grid containers to prevent rendering issues
-- Implement proper loading states and error boundaries around grid components
-- Use the built-in validation functions to ensure proper ARIA structure
-
-**Performance Optimization**:
-
-- Minimize column configuration and rely on AG Grid defaults
-- Use `domLayout: "normal"` for standard rendering performance
-- Implement proper data loading patterns with loading indicators
-- Use `getRowId` for efficient row identification and updates
-
-**Accessibility Compliance**:
-
-- The application automatically adds required ARIA attributes
-- Grid structure is validated after initialization
-- Screen reader compatibility is enhanced through proper role assignments
-- Focus management is handled by AG Grid's built-in accessibility features
-
-#### Migration Notes for Future AG Grid Versions
-
-**When upgrading from v33 Community Edition**:
-
-1. **Selection API**: Use `rowSelection: "single"/"multiple"` for Community Edition (deprecated but functional)
-2. **Event Cleanup**: Remove manual event listener cleanup (handled automatically in v33+)
-3. **Column API**: Ensure all column operations use `gridApi` instead of deprecated `columnApi`
-4. **Height Configuration**: Continue using fixed heights, percentage issues may persist in future versions
-5. **Console Warnings**: Review and update warning suppression for new deprecation messages
-
-**Recommended Testing Checklist**:
-
-- ✅ Test grid initialization and destruction cycles
-- ✅ Verify selection functionality works correctly
-- ✅ Check console for new deprecation warnings
-- ✅ Validate ARIA accessibility attributes
-- ✅ Test responsive behavior across different screen sizes
-- ✅ Verify error handling and loading states
-- **Selection**: Modern `selection` object with `mode` property
-- **API Compatibility**: Automatic handling of deprecated options **DOM Layout**: `normal` layout mode for standard grid behavior
-- **Accessibility**: Enhanced ARIA support with unique row identification and optimized keyboard navigation
-
-**Accessibility Configuration**:
-
-- **Row Identification**: `getRowId` function ensures unique row identification for screen readers
-- **Keyboard Navigation**: Disabled cell selection (`suppressCellSelection: true`) for better keyboard accessibility
-- **Focus Management**: Optimized row selection with `suppressRowClickSelection: false` for proper focus handling
-- **Screen Reader Support**: Enhanced ARIA attributes and semantic structure for assistive technologies
-
-#### Implementation Benefits
-
-- **Reliable Rendering**: Consistent grid display across all browsers and environments
-- **Responsive Design**: Viewport-based calculations adapt to different screen sizes
-- **Fallback Protection**: Minimum height prevents grid collapse
-- **Developer Experience**: Automatic percentage-to-fixed conversion prevents configuration errors
-- **Accessibility Compliance**: WCAG-compliant configuration with enhanced screen reader support and keyboard navigation
-
-### Interface Design Philosophy
-
-The application implements a **streamlined interface approach** focused on optimal user experience:
-
-#### Professional Interface (Home Page)
-
-- **Optimized Layout**: The home page (`/`) features a streamlined layout with full-height containers for maximum grid visibility
-- **Branded Header**: Clean header section with "Users Management" title, refresh button, and error simulation toggle
-- **Flexible Content Area**: Main content section uses `flex-1 p-8` with full height grid container for dynamic space utilization
-- **Dynamic Grid Sizing**: UsersGrid automatically adjusts to fill available container space for different screen sizes
-- **Professional Footer**: Informative footer displaying technology stack and branding information
-- **Modern Design**: Uses Tailwind CSS classes for consistent styling, shadows, borders, and responsive design
-- **Production-Ready**: Designed for professional environments with optimal data grid presentation and user experience
-- **Interactive Controls**: Header includes animated refresh button and toggle switch for error simulation testing
-- **Memory Management**: Implements `IDisposable` pattern for proper cleanup of AppStateService subscriptions and resource management
-
-#### Key Design Decisions
-
-- **Flexible Grid Sizing**: The UsersGrid component uses customizable height parameters with sensible defaults for various layout scenarios
-- **Simplified Configuration**: Column definitions rely on AG Grid's native capabilities for optimal performance and compatibility
-- **Integrated Error Controls**: Error simulation toggle is built into the header for easy access during development and testing
-- **Streamlined Navigation**: Single-page focus with all essential controls integrated into the main interface
-- **Native Grid Features**: Layout leverages AG Grid's built-in sorting, filtering, and rendering capabilities for maximum reliability
-
-This approach ensures the UsersGrid component provides reliable data presentation while maintaining professional appearance and functionality through AG Grid's proven default behaviors.
+- **Professional Layout**: Full-height containers for maximum grid visibility
+- **Branded Header**: Clean design with title, refresh button, and error simulation toggle
+- **Flexible Content**: Dynamic grid sizing that adapts to different screen sizes
+- **Modern Styling**: Tailwind CSS with consistent shadows, borders, and responsive design
+- **Integrated Controls**: Error simulation and refresh functionality built into the interface
 
 ## Recent Updates
 
 ### Error Simulation Enhancement & Grid Lifecycle Management
 
-The UsersGrid component has been updated with enhanced error simulation capabilities and improved grid lifecycle management for robust development and testing workflows:
+The UsersGrid component has been updated with enhanced error simulation capabilities and improved grid lifecycle management for robust development and testing workflows.
 
-#### **Enhanced Grid Lifecycle Management**:
-
-- **Clean State Transitions**: When switching off error simulation, the component now performs a complete grid cleanup and recreation to ensure a pristine state
 - **Grid Destruction & Recreation**: Automatically destroys and recreates the grid when transitioning from error simulation to normal mode for optimal reliability
 - **Extended DOM Update Delays**: Increased delay from 50ms to 100ms for DOM cleanup/update operations to ensure proper grid initialization after state changes
 - **Error-Safe Cleanup**: Grid destruction operations include comprehensive error handling to prevent cleanup failures from affecting component state
@@ -1164,29 +369,6 @@ if (SimulateErrors)
     }
 }
 ```
-
-#### **Previous Updates - AppState Integration & Memory Management**:
-
-Both Home.razor and UsersGrid.razor components have been updated with comprehensive AppState integration and memory management:
-
-- **IDisposable Implementation**: Added `@implements IDisposable` for proper resource cleanup
-- **AppState Subscription**: Implements `AppState.OnChange += StateHasChanged` for automatic re-rendering
-- **Dual Loading States**: Uses both local (`isRefreshing`) and global (`AppState.SetLoading()`) loading coordination
-- **Memory Safety**: Proper disposal of AppStateService subscriptions to prevent memory leaks
-- **Dual Interface Implementation**: Implements both `IDisposable` and `IAsyncDisposable` for comprehensive cleanup
-- **Enhanced Disposal Pattern**: Separates AppState cleanup (`Dispose()`) from JS interop cleanup (`DisposeAsync()`)
-- **AG Grid v33 Height Fix**: Automatic percentage-to-fixed height conversion to prevent rendering issues
-
-#### **Benefits Achieved**:
-
-- **Automatic Grid Setup**: Grid initialization now happens automatically after successful data loading, reducing manual coordination
-- **Improved Reliability**: Enhanced finally block ensures consistent grid initialization regardless of data loading path
-- **Better Error Handling**: Comprehensive error simulation covers all major failure scenarios for thorough testing
-- **Enhanced Development Experience**: Developers can test specific error conditions with predictable cycling through error types
-- **Hybrid State Management**: Perfect balance of local and global state coordination
-- **Memory Leak Prevention**: Proper disposal patterns prevent resource leaks and ensure clean component lifecycle managementention\*\*: Comprehensive subscription cleanup across all components
-- **Cross-Component Awareness**: Components automatically react to global state changes
-- **AG Grid Reliability**: Fixed height strategy ensures consistent grid rendering
 
 ## Current Project Status
 
@@ -1414,7 +596,7 @@ The application uses **Blazor WebAssembly** instead of Blazor Server for several
 │   ├── data/
 │   │   └── users.json           # User management dataset (40+ superhero-themed records)
 │   ├── appsettings.json         # Application configuration
-│   ├── index.html               # Main HTML template with AG Grid CDN references (Quartz and Alpine themes)
+│   ├── index.html               # Main HTML template with AG Grid CDN references
 │   └── favicon.png              # Application icon
 ├── .vscode/
 │   └── settings.json    # VS Code workspace settings
@@ -1461,51 +643,6 @@ const gridApi = agGrid.createGrid(container, gridOptions);
 
 This update ensures the UsersGrid component operates with the correct AG Grid v33.3.2 API patterns for maximum stability and reliability.
 
-### AG Grid Version Stability Update
-
-**AG Grid Community Edition Downgrade to v33.3.2**: The project has been updated to use AG Grid Community Edition v33.3.2 (downgraded from v34.1.2) for enhanced stability and compatibility:
-
-- **Stable Release**: v33.3.2 is a proven stable release with extensive community testing and bug fixes
-- **Enhanced Compatibility**: Better compatibility across different browser environments and deployment scenarios
-- **Reduced Breaking Changes**: Avoids potential breaking changes and API instabilities present in newer versions
-- **Production Reliability**: Ensures consistent behavior in production environments with well-tested functionality
-- **CDN Consistency**: Both CSS and JavaScript resources use the same v33.3.2 version for complete compatibility
-- **Interop Stability**: JavaScript interop functions use the correct v33.3.2 createGrid API method for optimal patterns and behaviors
-- **Long-term Support**: v33.3.2 provides stable foundation for long-term maintenance and updates
-
-**Updated Dependencies:**
-
-- AG Grid Community Edition: `^33.3.2` (package.json)
-- CDN CSS: `https://cdn.jsdelivr.net/npm/ag-grid-community@33.3.2/styles/ag-grid.css`
-- CDN Themes:
-  - Quartz (primary): `https://cdn.jsdelivr.net/npm/ag-grid-community@33.3.2/styles/ag-theme-quartz.css`
-  - Alpine (available): `https://cdn.jsdelivr.net/npm/ag-grid-community@33.3.2/styles/ag-theme-alpine.css`
-- CDN JavaScript: `https://cdn.jsdelivr.net/npm/ag-grid-community@33.3.2/dist/ag-grid-community.min.js`
-
-This version provides the optimal balance between modern features and production stability for the UsersGrid component.
-
-**Theme Implementation**: The project uses the AG Grid Quartz theme as the primary theme for modern, professional appearance, with Alpine theme available as an alternative.
-
-### AG Grid API Method Correction
-
-**AG Grid v33.3.2 API Method Update**: The JavaScript interop layer has been updated to use the correct AG Grid v33.3.2 API method for grid creation:
-
-- **Correct API Method**: Updated from `new agGrid.Grid(container, gridOptions)` to `agGrid.createGrid(container, gridOptions)` for proper v33.3.2 compatibility
-- **Enhanced Reliability**: Using the official AG Grid v33.3.2 createGrid API ensures proper grid initialization and lifecycle management
-- **Improved Stability**: The correct API method provides better error handling and resource management during grid creation
-- **Future-Proof Implementation**: Aligns with AG Grid's recommended patterns for v33.3.2 and later versions
-- **Consistent Documentation**: JavaScript interop comments now accurately reflect the v33.3.2 API usage patterns
-
-**Technical Details:**
-
-```javascript
-// Updated implementation in users-interop.js
-// Create the grid using v33 API - correct method
-const gridApi = agGrid.createGrid(container, gridOptions);
-```
-
-This correction ensures the UsersGrid component uses the proper AG Grid v33.3.2 API patterns for reliable grid creation and management.
-
 ### AG Grid Layout Configuration Enhancement
 
 **Explicit DOM Layout Control with Visual Styling Enhancement**: The UsersGrid component has been updated with explicit layout configuration, CSS box model optimization, and consistent visual styling for improved rendering consistency:
@@ -1518,7 +655,7 @@ This correction ensures the UsersGrid component uses the proper AG Grid v33.3.2 
 - **Cross-Browser Consistency**: Provides uniform grid rendering across different browsers and viewport sizes with standardized box model behavior and explicit styling
 - **Enhanced Reliability**: Explicit layout control, box model optimization, and visual styling reduce potential rendering inconsistencies in complex layouts
 
-This enhancement ensures the data grid renders consistently across all deployment environments while maintaining optimal performance and user experience with predictable sizing behavioravior and professional appearance.
+This enhancement ensures the data grid renders consistently across all deployment environments while maintaining optimal performance and user experience with predictable sizing behavior and professional appearance.
 
 ### Column Configuration Simplification
 
@@ -1532,22 +669,6 @@ This enhancement ensures the data grid renders consistently across all deploymen
 - **Reduced Complexity**: Easier maintenance and debugging with fewer custom implementations
 
 This simplification ensures the data grid leverages AG Grid's optimized default behaviors while maintaining professional appearance and functionality.
-
-### AG Grid Configuration Optimization
-
-**Simplified Configuration Approach**: The UsersGrid component has been optimized with a minimal configuration strategy that maximizes AG Grid Community Edition v33.3.2 compatibility:
-
-- **Explicit DOM Layout**: Grid options include `domLayout = "normal"` for consistent rendering behavior across different container environments
-- **Default Grid Behavior**: Column definitions use minimal configuration, relying entirely on AG Grid's built-in defaults for sorting, filtering, and cell rendering
-- **Automatic Feature Detection**: AG Grid Community Edition v33.3.2 automatically enables appropriate sorting and filtering based on data types and column content
-- **Native Cell Rendering**: Removed custom cell renderers in favor of AG Grid's default rendering capabilities for better performance and compatibility
-- **Simplified Column Definitions**: Each column uses only essential properties (`field`, `headerName`, `width`) allowing AG Grid to handle all other functionality automatically
-- **Maximum Compatibility**: This approach ensures the grid works reliably with AG Grid Community Edition v33.3.2 across all browser environments
-- **Reduced Maintenance**: Minimal configuration reduces potential compatibility issues and simplifies future updates
-- **Enhanced Performance**: Native AG Grid rendering provides optimal performance compared to custom cell renderers
-- **Consistent Behavior**: All columns use the same minimal declaration pattern for predictable and reliable rendering
-
-This simplified approach provides reliable grid functionality while maximizing compatibility with AG Grid Community Edition v33.3.2's proven behaviors and ensuring consistent rendering across all deployment environments.
 
 ### Component Layout Architecture
 
@@ -1575,7 +696,7 @@ else if (isLoading)
 }
 else
 {
-    <div id="@ContainerId" class="ag-theme-alpine" style="height: @Height; width: @Width; box-sizing: border-box; background-color: white; border: 1px solid #ddd;"></div>
+    <div id="@ContainerId" class="ag-theme-quartz" style="height: @Height; width: @Width;"></div>ing: border-box; background-color: white; border: 1px solid #ddd;"></div>
 }
 ```
 
@@ -1856,7 +977,7 @@ This application uses **IJSRuntime with Custom JavaScript Functions** for AG Gri
 #### 3. **Dependencies** (`wwwroot/index.html`)
 
 - AG Grid Community v33.3.2 from CDN
-- Alpine theme CSS for modern styling
+- Built-in Quartz theme via JavaScript configuration
 - Multiple custom interop JavaScript files
 
 ### How to Use AG Grid Integration
@@ -2488,3 +1609,42 @@ Pre-commit hooks automatically:
 ## License
 
 ISC License
+
+## Getting Started
+
+### Prerequisites
+
+- .NET 8.0 SDK
+- Node.js and npm
+- Modern web browser
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+
+   ```bash
+   npm install
+   dotnet restore
+   ```
+
+3. Build and run:
+   ```bash
+   npm run build:css
+   dotnet run
+   ```
+
+### Development
+
+- **CSS Development**: `npm run watch:css` for live Tailwind CSS compilation
+- **Code Quality**: Pre-commit hooks automatically run ESLint and Prettier
+- **Error Testing**: Toggle error simulation in the UI to test error handling
+
+## Performance Optimizations
+
+- **System Fonts**: Uses OS default fonts for zero network requests and instant rendering
+- **CSS Optimization**: Tailwind purging and PostCSS minification reduce bundle size
+- **CDN Assets**: AG Grid hosted via CDN for better caching
+- **Scoped Services**: HttpClient with 30-second timeout prevents hanging requests
+- **Memory Management**: Proper disposal patterns prevent memory leaks
+- **Build Pipeline**: Automated CSS building integrated with .NET compilation
