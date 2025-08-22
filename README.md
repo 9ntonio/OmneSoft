@@ -15,7 +15,7 @@ A modern Blazor WebAssembly application built with .NET 8, featuring interactive
 - **Enhanced Loading States & User Feedback**: Animated indicators, contextual messages, dedicated grid placeholders, and empty state handling for all async operations
 - **Centralized State Management**: AppStateService with reactive patterns for global application state
 - **Service Integration**: Dependency injection with scoped services for HttpClient and state management
-- **Accessibility Features**: WCAG-compliant components with proper focus management, semantic HTML, and ARIA attributes
+- **Accessibility Features**: WCAG-compliant components with proper focus management, semantic HTML, ARIA attributes, and enhanced ARIA compliance for empty grid states
 - **Responsive Design**: Mobile-friendly layout with Tailwind CSS
 - **Code Quality**: ESLint, Prettier, and Husky pre-commit hooks for consistent code formatting
 
@@ -66,6 +66,7 @@ The application uses a **system font-first approach** (`font-sans` in Tailwind C
 - **Modular interop functions** prevent loading unnecessary JavaScript
 - **Modern ES6+ syntax** for better performance and smaller code
 - **Error boundaries** with proper logging for production debugging
+- **ARIA compliance optimizations** with setTimeout-based grid structure validation for accessibility
 
 #### .NET WebAssembly Optimizations
 
@@ -232,6 +233,7 @@ The UsersGrid component implements a **dual loading state approach** with enhanc
 - Ensures component UI remains responsive during async operations
 - Shows dedicated grid placeholder during initialization instead of opacity effects
 - Displays user-friendly empty state message when no data is available
+- **Requires manual `StateHasChanged()` calls** since local state changes are independent of global state management
 
 **Global Loading State (`AppState.SetLoading()`)**:
 
@@ -239,6 +241,7 @@ The UsersGrid component implements a **dual loading state approach** with enhanc
 - Enables other parts of the application to react to data loading operations
 - Maintains centralized awareness of application-wide loading activities
 - Supports global loading indicators and navigation restrictions
+- **Automatically triggers UI updates** via the AppStateService event system without manual `StateHasChanged()` calls
 
 ```csharp
 // Dual loading state pattern in UsersGrid
@@ -503,7 +506,7 @@ The `UsersGrid` component is a specialized, production-ready grid specifically d
 - **Automatic re-rendering** - Reactive UI updates via AppStateService.OnChange subscription
 - **Memory leak prevention** - Comprehensive cleanup of subscriptions, JS interop, and .NET object references
 - **Resource management** - Proper disposal of grid instances and DotNetObjectReference objects
-- **Accessibility compliance** - Proper focus management, semantic HTML, ARIA attributes, and WCAG guidelines adherence
+- **Accessibility compliance** - Proper focus management, semantic HTML, ARIA attributes, WCAG guidelines adherence, and enhanced ARIA structure handling for empty grid states
 
 #### Generic AgGrid Component
 
@@ -808,7 +811,7 @@ createGrid: function (containerId, gridOptions, dotNetRef) {
 ✅ **Memory Management** - Proper disposal and cleanup  
 ✅ **Error Handling** - Try-catch blocks and logging  
 ✅ **Loading States** - User feedback during operations  
-✅ **Accessibility Support** - Keyboard navigation, screen reader compatibility, and ARIA attributes
+✅ **Accessibility Support** - Keyboard navigation, screen reader compatibility, ARIA attributes, and enhanced ARIA compliance for empty grid states
 
 #### UsersGrid Enhanced Features
 
