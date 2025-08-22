@@ -4,7 +4,7 @@ A modern Blazor WebAssembly application built with .NET 8, featuring comprehensi
 
 ## Features
 
-- **Professional User Interface**: Clean, modern layout with branded header, optimized content areas, and responsive design
+- **Professional User Interface**: Clean, modern layout with branded header, contextual controls, optimized content areas, and responsive design
 - **Advanced Data Grid**: AG Grid v33.3.2 integration with sorting, filtering, pagination, floating filter inputs, performance-optimized global search with debouncing, and intelligent value formatters
 - **Comprehensive Error Handling**: Production-ready error scenarios with user-friendly messages, retry mechanisms, and error simulation testing
 - **Intelligent State Management**: Enhanced AppStateService with reactive patterns, smart loading coordination, and component awareness
@@ -270,7 +270,7 @@ FilterUserData: function (data, statusFilters) {
 
 **Optimized Layout Structure:**
 
-- **Header**: Branded title, navigation controls, and error simulation toggle
+- **Header**: Branded title, contextual refresh button (visible only during error simulation), and error simulation toggle
 - **Main Content**: Flexible layout with optimized grid container spacing (300px reserved for header/footer)
 - **Footer**: Technology stack information and branding
 - **Responsive Design**: Enhanced viewport-based calculations with improved spacing for professional appearance
@@ -454,15 +454,29 @@ private string GetGridContainerStyle()
 **Optimized approach focused on professional user experience:**
 
 - **Professional Layout**: Optimized height containers with improved spacing (300px reserved for header/footer elements)
-- **Branded Header**: Clean design with title, refresh button, and error simulation toggle
+- **Branded Header**: Clean design with title and error simulation toggle
+- **Contextual Controls**: Refresh button appears only when error simulation is enabled, providing a cleaner interface during normal operation
 - **Enhanced Content Area**: Dynamic grid sizing with better visual balance and breathing room
 - **Modern Styling**: Tailwind CSS with consistent shadows, borders, and responsive design
-- **Integrated Controls**: Error simulation and refresh functionality built into the interface
+- **Integrated Controls**: Error simulation and conditional refresh functionality built into the interface
 - **Improved Spacing**: Better visual hierarchy with optimized viewport calculations
 
 ## Recent Updates
 
-### Component Initialization Enhancement (Latest)
+### UI Enhancement - Contextual Refresh Button (Latest)
+
+**Improved Interface Design**: The Home page now features a contextual refresh button that appears only when error simulation is enabled:
+
+**Key Improvements:**
+
+- **Cleaner Interface**: Refresh button is hidden during normal operation, reducing visual clutter
+- **Contextual Functionality**: Button appears only when error simulation is active, providing relevant functionality when needed
+- **Enhanced User Experience**: Interface adapts based on current mode, showing only relevant controls
+- **Professional Appearance**: Streamlined header design with conditional elements for better visual hierarchy
+
+This enhancement demonstrates the application's focus on adaptive UI design and contextual functionality, providing users with relevant controls based on their current workflow.
+
+### Component Initialization Enhancement
 
 **Improved Dropdown Handler Setup**: The UsersGrid component initialization has been optimized for better user experience and immediate interactivity:
 
@@ -831,7 +845,7 @@ The application opens to the **Users Management** interface featuring:
 - **Search Controls**: Global search box with debounced input and custom status filter dropdown with checkbox selection
 - **Filter Management**: Comprehensive filtering with status dropdown, global search, and column-specific filters
 - **Filter Management**: Active filter counter and clear filters functionality
-- **Refresh Button**: Reloads data and resets grid state
+- **Contextual Refresh Button**: Appears only during error simulation, reloads data and resets grid state
 - **Error Simulation Toggle**: Enables/disables error simulation for testing
 - **Professional Layout**: Full-height responsive design with branded header and footer
 
@@ -1548,7 +1562,7 @@ The application's primary interface (`/`) provides a professional, optimized use
 #### User Interface Features
 
 - **Flexible Layout**: Streamlined layout with branded header and flexible content area using `flex-1` for maximum grid visibility
-- **Branded Header**: "Users Management" title with integrated navigation controls, refresh functionality, and error simulation toggle
+- **Branded Header**: "Users Management" title with contextual refresh functionality (appears only during error simulation) and error simulation toggle
 - **Adaptive Content Area**: Main section with proper padding (p-8) and full height grid container (`h-full`) for optimal data grid presentation
 - **Technology Footer**: Footer displaying the technology stack (Blazor WebAssembly, .NET 8, AG Grid, Tailwind CSS)
 - **Modern Styling**: Tailwind CSS classes for shadows, borders, background colors, and responsive design
@@ -1561,7 +1575,7 @@ The application's primary interface (`/`) provides a professional, optimized use
 - **Comprehensive Error Handling**: Handles network failures, timeouts, HTTP errors (404, 401, 500), and JSON parsing errors
 - **Built-in Retry Mechanisms**: Error states include retry functionality with loading state management
 - **Loading State Management**: Dual loading state approach (component-specific and global coordination)
-- **Enhanced Manual Refresh**: Header-integrated refresh button with grid state reset for clean re-initialization and loading state feedback
+- **Enhanced Manual Refresh**: Contextual header-integrated refresh button (visible during error simulation) with grid state reset for clean re-initialization and loading state feedback
 
 #### User Experience Enhancements
 
