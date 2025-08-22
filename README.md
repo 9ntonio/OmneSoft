@@ -6,10 +6,10 @@ A modern Blazor WebAssembly application built with .NET 8, featuring comprehensi
 
 - **Professional User Interface**: Clean, modern layout with branded header, contextual controls, optimized content areas, and responsive design
 - **Advanced Data Grid**: AG Grid v33.3.2 integration with sorting, filtering, pagination, floating filter inputs, performance-optimized global search with debouncing, and intelligent value formatters
-- **Comprehensive Error Handling**: Production-ready error scenarios with user-friendly messages, retry mechanisms, and error simulation testing
+- **Comprehensive Error Handling**: Production-ready error scenarios with user-friendly messages, retry mechanisms, centered error display layout, and error simulation testing
 - **Intelligent State Management**: Enhanced AppStateService with reactive patterns, smart loading coordination, and component awareness
 - **Modern UI Components**: Custom Button and UsersGrid components with Tailwind CSS styling and accessibility features
-- **JavaScript Interop**: Robust AG Grid integration with proper lifecycle management and WCAG compliance
+- **JavaScript Interop**: Robust AG Grid integration with proper lifecycle management, WCAG compliance, and reusable click-outside detection utilities
 - **Code Quality**: ESLint, Prettier, and Husky pre-commit hooks with modern C# patterns
 
 ## Tech Stack
@@ -109,7 +109,7 @@ Comprehensive error simulation system with 5 error types:
 - 404 responses
 - Unexpected server errors
 
-Components feature intelligent parameter change detection and automatic grid state reset for clean error simulation transitions.
+Components feature intelligent parameter change detection, automatic grid state reset for clean error simulation transitions, and centered card-style error display for optimal user experience.
 
 ## Project Structure
 
@@ -117,6 +117,7 @@ Components feature intelligent parameter change detection and automatic grid sta
 OmneSoft/
 ├── Components/UI/           # Reusable UI components
 │   ├── Button.razor        # Custom button with variants
+│   ├── ClickOutsideExample.razor # Click-outside detection demo component
 │   ├── StatusFilter.razor  # Status filter component (available for custom implementations)
 │   └── UsersGrid.razor     # Advanced data grid component
 ├── Pages/
@@ -126,7 +127,9 @@ OmneSoft/
 │   └── AppStateService.cs  # Reactive state implementation
 ├── wwwroot/
 │   ├── css/app.css        # Tailwind CSS with AG Grid styles and floating filter fixes
-│   ├── js/users-interop.js # AG Grid JavaScript interop with filtering
+│   ├── js/
+│   │   ├── advanced-dropdown-helper.js # Advanced dropdown with keyboard navigation
+│   │   └── users-interop.js # AG Grid JavaScript interop with filtering
 │   └── data/users.json    # Sample user data (40 superhero-themed records)
 ├── MainLayout.razor       # Application layout
 └── Program.cs            # Entry point and DI configuration
@@ -137,6 +140,37 @@ OmneSoft/
 ### Button Component
 
 Versatile button with variants (Primary, Secondary, Success, Danger), sizes, loading states, and accessibility support.
+
+### AdvancedDropdown Component
+
+A demonstration component showcasing advanced dropdown functionality with click-outside detection and keyboard navigation. Features:
+
+- **Click-Outside Detection**: Automatically closes dropdown when clicking outside the component area
+- **Keyboard Navigation**: Supports Escape key to close dropdown and return focus to trigger button
+- **JavaScript Interop**: Uses custom `advancedDropdownHelper` for DOM event handling
+- **Proper Cleanup**: Implements `IAsyncDisposable` for memory management and event listener cleanup
+- **Reusable Pattern**: Demonstrates a common UI pattern that can be adapted for other components
+
+**Implementation Details:**
+
+```csharp
+// Component uses unique element identification
+private string elementId = Guid.NewGuid().ToString();
+
+// JavaScript interop for advanced dropdown functionality
+await JSRuntime.InvokeVoidAsync("advancedDropdownHelper.setup", elementId, dotNetRef);
+
+// Proper cleanup in disposal
+await JSRuntime.InvokeVoidAsync("advancedDropdownHelper.cleanup", elementId);
+```
+
+**JavaScript Integration**: This component requires the `advanced-dropdown-helper.js` file to be included in `wwwroot/index.html` for full functionality:
+
+```html
+<script src="js/advanced-dropdown-helper.js"></script>
+```
+
+**Usage Pattern**: The component demonstrates a reusable pattern for advanced dropdown behavior that can be adapted for modals, menus, and other overlay components throughout the application.
 
 ### StatusFilter Component
 
@@ -172,7 +206,7 @@ Advanced data grid with AG Grid v33.3.2 integration featuring comprehensive data
 - **Automatic Grid State Reset**: Clean state transitions during refresh operations
 - **WCAG-Compliant Accessibility**: Full ARIA attributes and keyboard navigation support
 - **Fixed-Height Strategy**: Prevents AG Grid v33 rendering issues with reliable display
-- **Professional UI**: Loading states with visual feedback and error recovery mechanisms
+- **Professional UI**: Loading states with visual feedback, centered error display layout, and error recovery mechanisms
 - **Extensible Architecture**: Infrastructure ready for advanced filtering capabilities while leveraging AG Grid's native filtering system
 - **Advanced Filtering System**: Comprehensive filtering with global search, status filters, floating column filters, and column-specific filtering capabilities
 
@@ -448,6 +482,8 @@ private string GetGridContainerStyle()
 - **CSS conflicts**: Ensure AG Grid CSS fixes have proper specificity and `!important` declarations to override default styles
 - **Initialization timing issues**: The enhanced `onGridReady` handler includes staged delays (50ms, 100ms) for proper component rendering - adjust if needed for slower environments
 - **Component initialization delays**: The dropdown handler and DotNetObjectReference are now created immediately in `OnAfterRenderAsync` for better user experience
+- **Advanced dropdown not working**: Ensure `advanced-dropdown-helper.js` is included in `wwwroot/index.html` with `<script src="js/advanced-dropdown-helper.js"></script>`
+- **AdvancedDropdown component errors**: Verify the JavaScript helper file is loaded and the component has proper element references
 
 ### Interface Design
 
@@ -457,13 +493,94 @@ private string GetGridContainerStyle()
 - **Branded Header**: Clean design with title and error simulation toggle
 - **Contextual Controls**: Refresh button appears only when error simulation is enabled, providing a cleaner interface during normal operation
 - **Enhanced Content Area**: Dynamic grid sizing with better visual balance and breathing room
+- **Centered Error Display**: Error states are displayed in centered, card-style containers with maximum width constraints for optimal readability
 - **Modern Styling**: Tailwind CSS with consistent shadows, borders, and responsive design
 - **Integrated Controls**: Error simulation and conditional refresh functionality built into the interface
-- **Improved Spacing**: Better visual hierarchy with optimized viewport calculations
+- **Improved Spacing**: Better visual hierarchy with optimized viewport calculations and consistent card-based layouts
 
 ## Recent Updates
 
-### UI Enhancement - Contextual Refresh Button (Latest)
+### JavaScript Interop Simplification (Latest)
+
+**Simplified Dropdown Handler**: The `setupDropdownHandler` function in `users-interop.js` has been streamlined for better reliability and performance:
+
+**Key Improvements:**
+
+- **Simplified Click Detection**: Removed complex DOM traversal logic in favor of straightforward container-based detection
+- **Eliminated Timing Dependencies**: Removed setTimeout delays that could cause race conditions
+- **Reduced Complexity**: Streamlined event handler setup for more predictable behavior
+- **Improved Reliability**: Simplified logic reduces potential points of failure in dropdown interactions
+
+**Implementation Changes:**
+
+```javascript
+// Simplified click handler - before: complex DOM traversal, after: direct container check
+const clickHandler = function (event) {
+  const dropdownContainer = container.querySelector('.relative');
+  if (dropdownContainer && !dropdownContainer.contains(event.target)) {
+    dotNetRef.invokeMethodAsync('CloseStatusDropdown');
+  }
+};
+
+// Immediate event listener attachment - no delays
+document.addEventListener('click', clickHandler);
+```
+
+This simplification improves the reliability of the status filter dropdown in the UsersGrid component while maintaining all functionality.
+
+### AdvancedDropdown Component Addition
+
+**New UI Component**: Added a demonstration component showcasing advanced dropdown functionality with click-outside detection and keyboard navigation:
+
+**Key Features:**
+
+- **Advanced Dropdown Functionality**: Demonstrates click-outside detection and keyboard navigation patterns
+- **JavaScript Interop Integration**: Uses custom `advancedDropdownHelper` utility for DOM event handling
+- **Proper Resource Management**: Implements `IAsyncDisposable` for comprehensive cleanup of event listeners and .NET object references
+- **Keyboard Accessibility**: Supports Escape key navigation and focus management
+- **Error Handling**: Includes comprehensive error handling in both C# and JavaScript layers
+
+**Implementation Highlights:**
+
+```csharp
+// Proper disposal pattern
+public async ValueTask DisposeAsync()
+{
+    if (dotNetRef != null)
+    {
+        await JSRuntime.InvokeVoidAsync("advancedDropdownHelper.cleanup", elementId);
+        dotNetRef.Dispose();
+    }
+}
+```
+
+**JavaScript Integration**: The component requires `advanced-dropdown-helper.js` to be included in the HTML file for full functionality. This utility provides a reusable foundation for implementing advanced dropdown behavior in other components.
+
+### Error State UI Enhancement
+
+**Improved Error Display Layout**: The UsersGrid component now features a centered, card-style error display for better visual hierarchy and user experience:
+
+**Key Improvements:**
+
+- **Centered Layout**: Error messages are now displayed in a centered container with maximum width constraints for better readability
+- **Card-Style Design**: Error states use a contained card layout with proper spacing and visual boundaries
+- **Enhanced Visual Hierarchy**: Improved spacing and layout structure provides better focus on error information
+- **Consistent Styling**: Error display maintains consistent styling with the rest of the application's design system
+- **Better Responsive Design**: Centered layout with max-width constraints ensures optimal display across different screen sizes
+
+**Implementation Details:**
+
+```razor
+<div class="flex justify-center mb-4">
+    <div class="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full">
+        <!-- Error content -->
+    </div>
+</div>
+```
+
+This enhancement demonstrates the application's focus on user experience optimization and consistent visual design patterns.
+
+### UI Enhancement - Contextual Refresh Button
 
 **Improved Interface Design**: The Home page now features a contextual refresh button that appears only when error simulation is enabled:
 
@@ -1084,6 +1201,7 @@ The application uses **Blazor WebAssembly** instead of Blazor Server for several
 │   └── AppSettings.cs   # Application configuration model
 ├── wwwroot/
 │   ├── js/
+│   │   ├── advanced-dropdown-helper.js  # Advanced dropdown with keyboard navigation and click-outside detection
 │   │   ├── users-interop.js     # AG Grid JavaScript interop with v33.3.2 createGrid API, lifecycle management, and filtering functionality
 │   │   ├── interop.js           # General JavaScript interop functions
 │   │   └── app.js               # Application-specific JavaScript
@@ -1429,7 +1547,7 @@ await builder.Build().RunAsync();
 
 ### JavaScript Interop Architecture
 
-The application uses a dedicated JavaScript interop system for AG Grid integration:
+The application uses a comprehensive JavaScript interop system for both AG Grid integration and general UI interactions:
 
 #### users-interop.js Features
 
@@ -1445,6 +1563,24 @@ The application uses a dedicated JavaScript interop system for AG Grid integrati
 - **Core Accessibility**: Basic ARIA compliance with essential grid functionality
 - **Grid Operations**: Data updates, column sizing, selection management, auto-sizing, and custom filtering
 - **UI Interaction**: Dropdown click-outside handling for custom filter components
+
+#### advanced-dropdown-helper.js Features
+
+- **Advanced Dropdown Functionality**: Comprehensive dropdown behavior with click-outside detection and keyboard navigation
+- **Escape Key Support**: Automatically closes dropdown on Escape key press and returns focus to trigger button
+- **Element Identification**: Uses unique element IDs and data attributes for reliable element targeting
+- **Event Management**: Proper event listener setup and cleanup to prevent memory leaks
+- **Blazor Integration**: Seamless integration with Blazor components via `DotNetObjectReference`
+- **Error Handling**: Comprehensive error handling for setup and cleanup operations
+- **Multiple Instance Support**: Supports multiple components using click-outside detection simultaneously
+
+```javascript
+// Click-outside helper API
+window.clickOutsideHelper = {
+  setup: function (elementId, dotNetRef),    // Setup click-outside detection
+  cleanup: function (elementId)             // Clean up event listeners
+};
+```
 
 ```javascript
 // Key interop functions with simplified grid configuration
@@ -1653,11 +1789,14 @@ The `UsersGrid` component is the core of the application's user management funct
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-gray-900">Users Management</h1>
             <div class="flex items-center space-x-4">
-                <button @onclick="RefreshData"
-                        disabled="@isRefreshing"
-                        class="@GetRefreshButtonClass() font-medium py-2 px-4 rounded-lg transition-colors">
-                    <!-- Refresh button with loading state -->
-                </button>
+                @if (simulateErrors)
+                {
+                    <button @onclick="RefreshData"
+                            disabled="@isRefreshing"
+                            class="@GetRefreshButtonClass() font-medium py-2 px-4 rounded-lg transition-colors">
+                        <!-- Contextual refresh button with loading state -->
+                    </button>
+                }
 
                 <div class="flex items-center space-x-2">
                     <label class="flex items-center cursor-pointer">
@@ -2214,7 +2353,7 @@ The application includes a comprehensive user dataset (`wwwroot/data/users.json`
 - **Row selection and click handling** with event callbacks
 - **Advanced filtering and sorting** capabilities
 - **Responsive design** with auto-sizing columns
-- **Interactive controls** - Refresh data button, selection retrieval, and error simulation toggle
+- **Interactive controls** - Contextual refresh data button (error simulation mode), selection retrieval, and error simulation toggle
 - **Real-time status updates** - Auto-hiding success/error messages with visual indicators
 
 ### Custom Components
