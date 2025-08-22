@@ -20,9 +20,6 @@ console.warn = function (...args) {
     message.includes('AG Grid: enableRangeSelection') ||
     message.includes('AG Grid: animateRows') ||
     message.includes('AG Grid: suppressRowClickSelection') ||
-    message.includes('AG Grid error #239') ||
-    message.includes('AG Grid: Theming API') ||
-    message.includes('AG Grid: CSS file') ||
     message.includes('AG Grid: Value Formatter')
   ) {
     return; // Suppress these specific v33 Community Edition warnings
@@ -98,6 +95,23 @@ window.usersInterop = {
         ...gridOptions.defaultColDef,
       };
 
+      // Configure v33 Theming API with custom styling
+      if (!gridOptions.theme) {
+        gridOptions.theme = {
+          extends: 'themeQuartz',
+          spacing: 4,
+          rowHeight: 42,
+          headerHeight: 48,
+          fontSize: 14,
+          fontFamily: 'inherit',
+          borderRadius: 8,
+          borderColor: '#e5e7eb',
+          headerBackgroundColor: '#f9fafb',
+          rowHoverColor: '#f8fafc',
+          selectedRowBackgroundColor: '#dbeafe',
+        };
+      }
+
       // Add value formatters for object/array fields to prevent AG Grid v33 warnings
       if (gridOptions.columnDefs) {
         gridOptions.columnDefs.forEach(colDef => {
@@ -133,7 +147,7 @@ window.usersInterop = {
                       minute: '2-digit',
                     })
                   );
-                } catch (e) {
+                } catch {
                   return params.value;
                 }
               }

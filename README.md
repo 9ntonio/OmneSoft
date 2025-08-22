@@ -8,7 +8,7 @@ A modern Blazor WebAssembly application built with .NET 8, featuring comprehensi
 - **Branded Application Header**: Professional header with "Users Management" branding, integrated navigation controls, and error simulation toggle
 - **Dynamic Viewport Layout**: Streamlined layout with proper content organization and visual hierarchy using full-height containers for optimal space utilization
 - **Advanced UsersGrid Component**: Production-ready grid component with comprehensive error handling, data loading, retry mechanisms, enhanced refresh functionality with grid state reset, stable v33.3.2 configuration with Quartz theme, explicit DOM layout control, and state integration
-- **AG Grid Integration**: Advanced data grid with sorting, filtering, selection capabilities, stable v33.3.2 API with correct createGrid method, simplified configuration approach relying on AG Grid Community Edition defaults, explicit DOM layout control with dedicated CSS container classes, and viewport-based responsive sizing
+- **AG Grid Integration**: Advanced data grid with sorting, filtering, selection capabilities, stable v33.3.2 API with correct createGrid method, intelligent value formatters for complex data types (arrays, dates), simplified configuration approach relying on AG Grid Community Edition defaults, explicit DOM layout control with dedicated CSS container classes, and viewport-based responsive sizing
 - **User Management Data**: Comprehensive user dataset with 40+ superhero-themed records including roles, licenses, and status tracking
 - **Production-Ready Error Handling**: Comprehensive HTTP error scenarios with user-friendly messages and retry mechanisms
 - **Network Resilience**: Handles connection failures, timeouts, and various server error conditions
@@ -17,7 +17,7 @@ A modern Blazor WebAssembly application built with .NET 8, featuring comprehensi
 - **Intelligent Loading States & User Feedback**: Animated indicators, contextual messages, full-height loading states, smart global loader suppression, and comprehensive triple-layer state management for all async operations across components and pages
 - **Intelligent State Management**: Enhanced AppStateService with reactive patterns, component loading awareness, smart global loader suppression, and unified loading coordination across all application components
 - **Service Integration**: Dependency injection with scoped services for HttpClient and state management
-- **JavaScript Interop**: Robust JavaScript interoperability with AG Grid v33.3.2 using the correct createGrid API method with backward compatible selection modes, deprecated option removal, and comprehensive grid validation for optimal compatibility
+- **JavaScript Interop**: Robust JavaScript interoperability with AG Grid v33.3.2 using the correct createGrid API method with backward compatible selection modes, deprecated option removal, refined console warning management, and comprehensive grid validation for optimal compatibility
 - **Enhanced Accessibility Features**: WCAG-compliant components with proper focus management, semantic HTML, ARIA attributes, improved row identification for screen readers, and v33-compatible grid configuration
 - **Responsive Design**: Professional layout that adapts to any screen size with Tailwind CSS and optimized viewport calculations
 - **Professional Branding**: Branded header with "Users Management" title and technology stack footer for enhanced user experience
@@ -30,8 +30,8 @@ A modern Blazor WebAssembly application built with .NET 8, featuring comprehensi
 - **State Management**: Enhanced AppStateService with reactive patterns, component loading awareness, intelligent loader suppression, and comprehensive triple-layer loading coordination
 - **Dependency Injection**: Built-in .NET DI container with scoped services
 - **Styling**: Tailwind CSS v3.4.17 with PostCSS processing and autoprefixer
-- **Data Grid**: AG Grid Community Edition v33.3.2 (CDN-hosted) with Quartz theme, fixed-height strategy for reliability, and stable configuration using correct createGrid API
-- **JavaScript Interop**: Custom interop functions for AG Grid v33.3.2 integration using correct createGrid API with backward compatible selection modes, deprecated option cleanup, intelligent value formatters for complex data types, enhanced accessibility features including ARIA support and screen reader optimization, and comprehensive grid state validation
+- **Data Grid**: AG Grid Community Edition v33.3.2 (CDN-hosted) with native Quartz theme integration, fixed-height strategy for reliability, and stable configuration using correct createGrid API
+- **JavaScript Interop**: Custom interop functions for AG Grid v33.3.2 integration using correct createGrid API with backward compatible selection modes, deprecated option cleanup, refined console warning suppression, intelligent value formatters for complex data types, enhanced accessibility features including ARIA support and screen reader optimization, and comprehensive grid state validation
 - **HTTP Client**: Configured HttpClient with 30-second timeout
 - **Build Tools**: npm scripts with automated CSS building and .NET integration
 - **Code Quality**: ESLint v9.33.0, Prettier v3.6.2, Husky v9.1.7, lint-staged v16.1.5
@@ -63,29 +63,37 @@ A modern Blazor WebAssembly application built with .NET 8, featuring comprehensi
 
 **Critical AG Grid v33 Community Edition Height Issue**: AG Grid Community Edition v33.3.2 has known issues with percentage-based heights that can cause rendering problems, grid collapse, or incorrect sizing. This application implements a **fixed-height strategy** to ensure reliable grid rendering:
 
-**Enhanced Grid Container Management**: The application includes dedicated CSS classes and height management for reliable AG Grid rendering:
+**Streamlined Grid Container Management**: The application uses a minimal CSS approach that relies on AG Grid's built-in Quartz theme while ensuring reliable container sizing:
 
 - **Fixed Height Strategy**: Uses `500px` default height and `calc(100vh - 200px)` for viewport-based sizing instead of percentage heights
 - **Percentage Height Prevention**: Component automatically converts percentage heights to fixed `500px` to prevent AG Grid v33 rendering issues
 - **Reliable Rendering**: `!important` declarations ensure grid dimensions are consistently applied regardless of CSS specificity conflicts
 - **Responsive Design**: Minimum height constraints (`500px`) prevent grid collapse on smaller screens while maintaining usability
 - **Universal Container Class**: `.ag-grid-container` class provides consistent styling for any AG Grid instance in the application
+- **Native Theme Integration**: Relies on AG Grid's built-in Quartz theme for styling, reducing CSS complexity and maintenance overhead
 - **Cross-Browser Compatibility**: Explicit width and height declarations ensure consistent behavior across different browsers and devices
 
-**CSS Implementation:**
+**Simplified CSS Implementation:**
 
 ```css
+/* AG Grid v33 Theming API - Container styles only */
+.ag-grid-container {
+  min-height: 400px;
+}
+
 /* Ensure proper grid sizing - no percentages for AG Grid v33 */
 #users-grid {
   height: calc(100vh - 200px) !important;
   min-height: 500px !important;
   width: 100% !important;
+  position: relative;
 }
 
 .ag-grid-container {
   height: calc(100vh - 200px) !important;
   min-height: 500px !important;
   width: 100% !important;
+  position: relative;
 }
 ```
 
@@ -101,6 +109,66 @@ private string GetGridContainerStyle()
     return $"height: {height}; width: {width};";
 }
 ```
+
+### AG Grid Value Formatters & Data Type Handling
+
+**Intelligent Value Formatters for Complex Data Types**: The JavaScript interop layer automatically applies value formatters to handle complex data types and prevent AG Grid v33 warnings:
+
+**Array Field Formatting (Roles)**:
+
+```javascript
+// Handle roles array field
+if (
+  colDef.field === 'roles' &&
+  !colDef.valueFormatter &&
+  !colDef.cellRenderer
+) {
+  colDef.valueFormatter = function (params) {
+    if (params.value && Array.isArray(params.value)) {
+      return params.value.join(', ');
+    }
+    return params.value || '';
+  };
+}
+```
+
+**Date Field Formatting (Last Active)**:
+
+```javascript
+// Handle lastActive date field
+if (
+  colDef.field === 'lastActive' &&
+  !colDef.valueFormatter &&
+  !colDef.cellRenderer
+) {
+  colDef.valueFormatter = function (params) {
+    if (params.value) {
+      try {
+        const date = new Date(params.value);
+        return (
+          date.toLocaleDateString() +
+          ' ' +
+          date.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        );
+      } catch (e) {
+        return params.value;
+      }
+    }
+    return '';
+  };
+}
+```
+
+**Key Benefits:**
+
+- **Prevents AG Grid v33 Warnings**: Eliminates console warnings about complex data types in grid cells
+- **Automatic Detection**: Only applies formatters when no existing formatter or cell renderer is present
+- **Graceful Fallbacks**: Handles null/undefined values and parsing errors gracefully
+- **Localized Formatting**: Uses browser's locale settings for date/time display
+- **Performance Optimized**: Minimal overhead with efficient type checking and formatting logic
 
 ### Performance & Efficiency Optimizations
 
@@ -129,7 +197,8 @@ The application uses a **system font-first approach** (`font-sans` in Tailwind C
 - **Tailwind CSS purging** removes unused styles, dramatically reducing CSS bundle size
 - **PostCSS autoprefixer** ensures cross-browser compatibility without manual vendor prefixes
 - **Automated CSS builds** integrated into .NET build pipeline for seamless development
-- **AG Grid CSS Optimization** with dedicated container classes and fixed-height strategy using `!important` declarations for reliable grid rendering
+- **Streamlined AG Grid CSS** with minimal container classes and fixed-height strategy using `!important` declarations for reliable grid rendering
+- **Native Theme Integration** relies on AG Grid's built-in Quartz theme, reducing CSS complexity and maintenance overhead
 - **AG Grid v33 Height Fix** with automatic percentage-to-fixed height conversion to prevent Community Edition rendering issues
 - **Responsive Grid Containers** with `calc(100vh - 200px)` height calculations and minimum height constraints for consistent display across devices
 
@@ -291,7 +360,7 @@ The `UsersGrid` component provides flexible configuration options for optimal in
 - **Responsive Width**: Defaults to `100%` for full container width utilization (width percentages work correctly)
 - **Intelligent Error Simulation**: Real-time error simulation toggle with lifecycle-aware parameter change detection, automatic grid data refresh, and complete grid recreation for clean state transitions
 - **Event Callbacks**: Row click and selection change events for interactive functionality
-- **AG Grid Quartz Theme**: Uses the modern Quartz theme for professional appearance
+- **Native AG Grid Theming**: Uses AG Grid's built-in Quartz theme with minimal CSS overrides for professional appearance and reduced maintenance
 
 ## Project Structure
 
@@ -675,6 +744,40 @@ The application implements an **optimized layout pattern** using Tailwind CSS an
 ### AG Grid Community Edition v33.3.2 Configuration & Developer Notes
 
 The application uses AG Grid Community Edition v33.3.2 with specific configuration to address known issues, deprecation warnings, and ensure reliable rendering. This section provides comprehensive guidance for developers working with v33 Community Edition.
+
+#### Theming API Configuration (v33 Breaking Change)
+
+**AG Grid v33 Theming API Migration**: AG Grid v33 introduced a new Theming API as the default styling method, replacing the legacy CSS file approach. The application has been configured to use the new Theming API to prevent styling conflicts.
+
+**Error Resolution**: If you encounter the error "Theming API and CSS File Themes are both used in the same page", this indicates a conflict between the new v33 Theming API and legacy CSS files. The application resolves this by:
+
+- **Removing Legacy CSS Files**: No longer includes `ag-theme-quartz.css` or `ag-theme-alpine.css` files
+- **Using Theming API Only**: Configures themes via JavaScript objects instead of CSS files
+- **Custom Theme Configuration**: Applies custom styling through the Theming API with proper v33 syntax
+
+```javascript
+// v33 Theming API configuration (replaces CSS theme files)
+gridOptions.theme = {
+  extends: 'themeQuartz',
+  spacing: 4,
+  rowHeight: 42,
+  headerHeight: 48,
+  fontSize: 14,
+  fontFamily: 'inherit',
+  borderRadius: 8,
+  borderColor: '#e5e7eb',
+  headerBackgroundColor: '#f9fafb',
+  rowHoverColor: '#f8fafc',
+  selectedRowBackgroundColor: '#dbeafe',
+};
+```
+
+**Migration Benefits**:
+
+- **No CSS Conflicts**: Eliminates theming conflicts between API and CSS files
+- **Better Performance**: Reduces CSS bundle size by removing theme files
+- **Modern Approach**: Uses the recommended v33 styling method
+- **Consistent Theming**: Ensures reliable theme application across all browsers
 
 #### Selection Mode Compatibility
 
@@ -1566,6 +1669,7 @@ The application uses a dedicated JavaScript interop system for AG Grid integrati
 - **Grid Lifecycle Management**: Complete grid creation, update, and destruction lifecycle
 - **Stable AG Grid API**: Uses v33.3.2 `createGrid` API with minimal configuration approach optimized for Community Edition
 - **Essential Row Selection**: Basic row selection configuration using direct string values for reliable functionality
+- **Intelligent Value Formatters**: Automatic handling of complex data types including array fields (roles displayed as comma-separated values) and date fields (lastActive formatted as localized date/time) to prevent AG Grid v33 warnings
 - **Event Handling**: Row click and selection change events with .NET callbacks
 - **Resource Management**: Proper cleanup and memory management with grid destruction
 - **Error Handling**: Comprehensive error handling with console logging
