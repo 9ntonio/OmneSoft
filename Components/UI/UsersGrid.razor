@@ -87,8 +87,7 @@ else
         new {
             field = "roles",
             headerName = "Roles",
-            width = 200,
-            valueFormatter = "params.value ? params.value.join(', ') : ''"
+            width = 200
         },
         new {
             field = "license",
@@ -103,8 +102,7 @@ else
         new {
             field = "lastActive",
             headerName = "Last Active",
-            width = 150,
-            valueFormatter = "params.value ? new Date(params.value).toLocaleDateString() + ' ' + new Date(params.value).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''"
+            width = 150
         },
         new {
             field = "invitedBy",

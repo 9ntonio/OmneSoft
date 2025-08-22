@@ -98,6 +98,51 @@ window.usersInterop = {
         ...gridOptions.defaultColDef,
       };
 
+      // Add value formatters for object/array fields to prevent AG Grid v33 warnings
+      if (gridOptions.columnDefs) {
+        gridOptions.columnDefs.forEach(colDef => {
+          // Handle roles array field
+          if (
+            colDef.field === 'roles' &&
+            !colDef.valueFormatter &&
+            !colDef.cellRenderer
+          ) {
+            colDef.valueFormatter = function (params) {
+              if (params.value && Array.isArray(params.value)) {
+                return params.value.join(', ');
+              }
+              return params.value || '';
+            };
+          }
+
+          // Handle lastActive date field
+          if (
+            colDef.field === 'lastActive' &&
+            !colDef.valueFormatter &&
+            !colDef.cellRenderer
+          ) {
+            colDef.valueFormatter = function (params) {
+              if (params.value) {
+                try {
+                  const date = new Date(params.value);
+                  return (
+                    date.toLocaleDateString() +
+                    ' ' +
+                    date.toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  );
+                } catch (e) {
+                  return params.value;
+                }
+              }
+              return '';
+            };
+          }
+        });
+      }
+
       // Handle v33 Community Edition selection - keep original values
       // According to AG Grid v33 Community Edition docs, "single" and "multiple" still work
       // The new "singleRow" and "multiRow" may not be fully supported in Community Edition

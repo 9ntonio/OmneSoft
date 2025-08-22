@@ -31,7 +31,7 @@ A modern Blazor WebAssembly application built with .NET 8, featuring comprehensi
 - **Dependency Injection**: Built-in .NET DI container with scoped services
 - **Styling**: Tailwind CSS v3.4.17 with PostCSS processing and autoprefixer
 - **Data Grid**: AG Grid Community Edition v33.3.2 (CDN-hosted) with Quartz theme, fixed-height strategy for reliability, and stable configuration using correct createGrid API
-- **JavaScript Interop**: Custom interop functions for AG Grid v33.3.2 integration using correct createGrid API with backward compatible selection modes, deprecated option cleanup, enhanced accessibility features including ARIA support and screen reader optimization, and comprehensive grid state validation
+- **JavaScript Interop**: Custom interop functions for AG Grid v33.3.2 integration using correct createGrid API with backward compatible selection modes, deprecated option cleanup, intelligent value formatters for complex data types, enhanced accessibility features including ARIA support and screen reader optimization, and comprehensive grid state validation
 - **HTTP Client**: Configured HttpClient with 30-second timeout
 - **Build Tools**: npm scripts with automated CSS building and .NET integration
 - **Code Quality**: ESLint v9.33.0, Prettier v3.6.2, Husky v9.1.7, lint-staged v16.1.5
@@ -144,6 +144,7 @@ The application uses a **system font-first approach** (`font-sans` in Tailwind C
 - **Modern AG Grid v33 API** with backward compatible selection modes ('single'/'multiple'), automatic cleanup of deprecated v32 options, and streamlined grid configuration
 - **Backward Compatibility Handling** with preservation of existing `rowSelection` values ('single'/'multiple') that remain functional in v33 Community Edition
 - **Grid State Validation** with comprehensive validation functions that ensure proper ARIA attributes, semantic structure, and accessibility compliance across all grid instances
+- **Intelligent Value Formatters** with automatic handling of complex data types including array fields (roles) and date fields (lastActive) to prevent AG Grid v33 warnings and ensure proper data display
 - **Correct AG Grid API** using v33.3.2 createGrid method with backward compatible selection modes, deprecated option removal, and accessibility improvements including ARIA-compliant row identification and screen reader support
 
 #### .NET WebAssembly Optimizations
@@ -294,7 +295,7 @@ The `UsersGrid` component provides flexible configuration options for optimal in
 
 ## Project Structure
 
-The application follows a clean, organized structure with focused component namespaces:
+The application follows a clean, organized structure with streamlined component namespaces for optimal maintainability:
 
 ```
 OmneSoft/
@@ -324,6 +325,17 @@ OmneSoft/
 ├── App.razor                # Root application component
 └── Program.cs               # Application entry point and DI configuration
 ```
+
+### Namespace Organization
+
+The project uses a simplified namespace structure focused on essential components:
+
+- **`OmneSoft.Components.UI`**: Core UI components (Button, UsersGrid)
+- **`OmneSoft.Services`**: Application services and state management
+- **`OmneSoft.Pages`**: Page components and routing
+- **`OmneSoft.Models`**: Data models and configuration
+
+The `_Imports.razor` file includes only the necessary namespaces, ensuring clean component imports without unused references. The Layout namespace has been removed to maintain a focused component architecture.
 
 ### Component Integration Examples
 
@@ -582,7 +594,7 @@ else
 
 This approach ensures immediate component responsiveness, proper global state coordination, and intelligent loader suppression to prevent duplicate loading indicators while maintaining clean user experience across the entire application. The pattern is consistently implemented across both the UsersGrid component and the Home page for unified loading state management.
 
-### Accessibility Enhancements
+## Accessibility Enhancements
 
 The application implements comprehensive accessibility features to ensure WCAG compliance and optimal user experience for all users, including those using assistive technologies:
 
