@@ -143,7 +143,6 @@ Professional layout with branded header, contextual refresh button (error simula
 ## Recent Updates
 
 - **JavaScript Interop**: Simplified dropdown handler with direct container-based click detection
-- **AdvancedDropdown Component**: Added demo component with click-outside detection and keyboard navigation
 - **Error Display**: Centered, card-style error layout for better UX
 - **Contextual UI**: Refresh button appears only during error simulation
 - **AG Grid Config**: Streamlined floating filter setup with global configurationbase:
@@ -238,17 +237,6 @@ These changes maintain full functionality while ensuring compatibility with AG G
 - **Performance Optimized**: Client-side filtering implementation ensures smooth performance and reliable operation in Community Edition
 
 This enhancement provides a complete, production-ready status filtering system that uses client-side data filtering for maximum compatibility with AG Grid Community Edition while maintaining optimal performance.
-
-### Component Initialization Enhancement (Latest)
-
-**Improved Dropdown Handler Setup**: The UsersGrid component has been optimized for better initialization timing and user experience:
-
-**Implementation Improvements:**
-
-- **Early Dropdown Handler Initialization**: The status filter dropdown handler is now set up immediately when the component renders, ensuring the filter button works even before grid initialization
-- **Improved User Experience**: Users can interact with the status filter dropdown immediately after component load, without waiting for the data grid to fully initialize
-- **Better Error Recovery**: The dropdown functionality remains available even if grid initialization encounters errors
-- **Optimized Initialization Sequence**: DotNetObjectReference creation and dropdown handler setup moved to the beginning of the `OnAfterRenderAsync` method for immediate availability
 
 **Technical Changes:**
 
@@ -439,6 +427,8 @@ The project is ready for development, testing, and production deployment with al
    npm run dev
    # or
    npm start
+   # or
+   dotnet run
    ```
 
 5. **Open your browser** and navigate to `https://localhost:5001` or `http://localhost:5000`
@@ -498,22 +488,11 @@ The AG Grid v33.3.2 Community Edition implementation includes:
 
 #### Development Features
 
-- **Hot Reload**: CSS compilation with watch mode and Blazor hot reload
 - **Error Boundaries**: Comprehensive error handling with user-friendly messages
 - **Loading States**: Dual loading state management (local and global)
 - **Memory Management**: Proper cleanup of subscriptions and resources with IDisposable
 - **Accessibility**: WCAG-compliant implementation with ARIA attributes
 - **Code Quality**: Automated formatting and linting with pre-commit hooks
-
-## Contributing
-
-This project follows modern development practices:
-
-- **Code Quality**: ESLint v9.33.0 and Prettier v3.6.2 ensure consistent formatting
-- **Git Hooks**: Husky v9.1.7 runs quality checks before commits with lint-staged
-- **Architecture**: Clean separation of concerns with dependency injection
-- **Testing**: Error simulation system for comprehensive testing scenarios
-- **Build Pipeline**: Automated CSS compilation integrated into .NET build process
 
 ## License
 
@@ -732,53 +711,6 @@ The application uses **Blazor WebAssembly** instead of Blazor Server for several
 - **Offline Capability**: Once loaded, the application can function without network connectivity
 - **Client-Side Performance**: All processing happens on the client, reducing server load and improving responsiveness
 - **Static Hosting**: Can be deployed to any static file hosting service (CDN, GitHub Pages, etc.)
-
-## Project Structure
-
-```text
-├── Components/
-│   ├── Layout/          # Layout components (currently empty - using MainLayout.razor)
-│   └── UI/              # Reusable UI components
-│       ├── Button.razor         # Custom button component
-│       └── UsersGrid.razor      # Advanced user management grid with 7-column layout, error handling, and Quartz theme
-├── Pages/
-│   └── Home.razor       # Professional user management interface with header controls, full-height layout, and IDisposable implementation
-├── Services/            # Application services
-│   ├── AppStateService.cs       # Centralized state management implementation
-│   └── IAppStateService.cs      # State management interface
-├── Models/              # Data models and configuration
-│   └── AppSettings.cs   # Application configuration model
-├── wwwroot/
-│   ├── js/
-│   │   ├── advanced-dropdown-helper.js  # Advanced dropdown with keyboard navigation and click-outside detection
-│   │   ├── users-interop.js     # AG Grid JavaScript interop with v33.3.2 createGrid API, lifecycle management, and filtering functionality
-│   │   └── app.js               # Application-specific JavaScript
-│   ├── css/
-│   │   ├── app.css              # Source Tailwind CSS with AG Grid container optimizations
-│   │   └── app.min.css          # Compiled and minified CSS
-│   ├── data/
-│   │   └── users.json           # User management dataset (40 superhero-themed records with 4 status types)
-│   ├── appsettings.json         # Application configuration
-│   ├── index.html               # Main HTML template with AG Grid CDN references
-│   └── favicon.png              # Application icon
-├── .vscode/
-│   └── settings.json    # VS Code workspace settings
-├── Program.cs           # Application startup and service configuration
-├── MainLayout.razor     # Main application layout with conditional rendering and footer
-├── App.razor            # Root application component with routing
-├── _Imports.razor       # Global using statements
-├── OmneSoft.csproj      # Project configuration with automated CSS builds and .NET 8.0.8
-├── package.json         # npm dependencies and build scripts
-├── tailwind.config.js   # Tailwind CSS configuration
-├── postcss.config.js    # PostCSS configuration for CSS processing
-├── eslint.config.js     # ESLint configuration for code quality
-├── .husky/              # Git hooks for code quality
-│   ├── pre-commit       # Pre-commit hook for linting and formatting
-│   └── pre-push         # Pre-push hook for additional checks
-├── .prettierrc          # Prettier configuration
-├── .prettierignore      # Prettier ignore patterns
-└── .editorconfig        # Editor configuration for consistent formatting
-```
 
 ## Previous Updates
 
@@ -1112,46 +1044,12 @@ The application uses a comprehensive JavaScript interop system for both AG Grid 
 - **Grid Operations**: Data updates, column sizing, selection management, auto-sizing, and custom filtering
 - **UI Interaction**: Dropdown click-outside handling for custom filter components
 
-#### advanced-dropdown-helper.js Features
-
-- **Advanced Dropdown Functionality**: Comprehensive dropdown behavior with click-outside detection and keyboard navigation
-- **Escape Key Support**: Automatically closes dropdown on Escape key press and returns focus to trigger button
-- **Element Identification**: Uses unique element IDs and data attributes for reliable element targeting
-- **Event Management**: Proper event listener setup and cleanup to prevent memory leaks
-- **Blazor Integration**: Seamless integration with Blazor components via `DotNetObjectReference`
-- **Error Handling**: Comprehensive error handling for setup and cleanup operations
-- **Multiple Instance Support**: Supports multiple components using click-outside detection simultaneously
-
-```javascript
-// Click-outside helper API
-window.clickOutsideHelper = {
-  setup: function (elementId, dotNetRef),    // Setup click-outside detection
-  cleanup: function (elementId)             // Clean up event listeners
-};
-```
-
-```javascript
-// Key interop functions with simplified grid configuration
-window.usersInterop = {
-  createGrid: function (containerId, gridOptions, dotNetRef),
-  setRowData: function (containerId, rowData),
-  getSelectedRows: function (containerId),
-  sizeToFit: function (containerId),
-  destroyGrid: function (containerId),
-  autoSizeAllColumns: function (containerId),
-  applyStatusFilter: function (containerId, selectedStatuses),
-  setQuickFilter: function (containerId, filterText),
-  clearAllFilters: function (containerId),
-  setupDropdownHandler: function (containerId, dotNetRef)
-};
-```
-
 ### Development
 
 Run the application in development mode:
 
 ```bash
-npm run dev
+dotnet run
 ```
 
 This will:
@@ -1823,19 +1721,6 @@ switch (response.StatusCode)
 }
 ```
 
-#### Testing Error Handling
-
-1. **Navigate to Grid Demo** (`/grid-demo`)
-2. **Enable Error Simulation** - Toggle the "Simulate Errors" switch to activate 50% error rate
-3. **Click "Refresh Users Data"** - Triggers data reload with potential simulated errors
-4. **Observe Error States** - User-friendly error messages with retry options
-5. **Test Accessibility** - Use keyboard navigation and screen readers to verify accessibility compliance
-6. **Interactive Controls** - Test all buttons, toggles, and grid interactions for proper focus management\*Test Retry Functionality\*\* - Click retry buttons to test error recovery
-7. **Monitor Loading States** - Animated indicators during simulated delays
-8. **Disable Simulation** - Turn off error simulation for normal operation testing
-
-This simulation system ensures robust error handling and provides a realistic testing environment for error scenarios that would be difficult to reproduce in development.
-
 #### Recent Improvements
 
 **Enhanced HTTP Error Simulation**: The error simulation system has been improved to handle actual HTTP responses more effectively:
@@ -1924,24 +1809,6 @@ The application includes a comprehensive user dataset (`wwwroot/data/users.json`
 - **Status message system** with contextual icons and auto-dismiss functionality
 - **Responsive controls** with loading states and animated indicators
 
-### Grid Demo (`/grid-demo`)
-
-- **UsersGrid component** with comprehensive user management data
-- **40 superhero-themed user records** with realistic organizational structure
-- **Advanced error handling** with detailed error states and retry mechanisms
-- **Simple error simulation** - Toggle-able 404 error demonstration for development and testing
-- **User status tracking** (Active, Inactive, Suspended) with color-coded display
-- **Role-based visualization** (admin, manager, field, analyst, etc.) with comma-separated display
-- **License tier management** (Enterprise, Field Level, Standard)
-- **Smart data loading** with configurable JSON endpoints
-- **Network resilience** handling various HTTP error scenarios (network errors, timeouts, JSON parsing errors, 404s)
-- **Loading states** with animated indicators and user feedback
-- **Row selection and click handling** with event callbacks
-- **Advanced filtering and sorting** capabilities
-- **Responsive design** with auto-sizing columns
-- **Interactive controls** - Contextual refresh data button (error simulation mode), selection retrieval, and error simulation toggle
-- **Real-time status updates** - Auto-hiding success/error messages with visual indicators
-
 ### Custom Components
 
 #### Button Component
@@ -1984,10 +1851,6 @@ Pre-commit hooks automatically:
 - Lint and fix JavaScript files
 - Format C# and Razor files
 
-## License
-
-ISC License
-
 ## Getting Started
 
 ### Prerequisites
@@ -2023,6 +1886,21 @@ ISC License
 - **System Fonts**: Uses OS default fonts for zero network requests and instant rendering
 - **CSS Optimization**: Tailwind purging and PostCSS minification reduce bundle size
 - **CDN Assets**: AG Grid hosted via CDN for better caching
-- **Scoped Services**: HttpClient with 30-second timeout prevents hanging requests
+- **Scoped Services**: HttpClient with 30-second timeout prevents hanging requests and was set to show loader UI process
 - **Memory Management**: Proper disposal patterns prevent memory leaks
 - **Build Pipeline**: Automated CSS building integrated with .NET compilation
+
+## Screenshot
+
+![OmneSoft Application Screenshot](screenshot.png)
+
+_Modern user management interface with AG Grid integration, error simulation, and responsive design_
+
+## If I had more time...
+
+- **JavaScript Interop Feature**: I was not able to add any of the options noted in time. I prioritized the app structure and the items noted above as I felt they were essential for the the application and to communicate my knowledge of the code space to you within the given time.
+- **Light House**: I would want to add additional features to get a near perfect Light House score to help with optimizations.
+- **Mobile Pagination**: I would direct some time on the mobile view of the pagination bar.
+- **UI**: I was not able to add the filter UI noted in the example in time. I would want to add them and test various options to insure best use @ desktop and mobile. I would also add the styles noted in the designs to the pagination if I had more time.
+- **Actions Column**: I was not able to add a simple dropdown or button to the column in time.
+- **Proper Error Handling**: I would integrate the proper error handling as what I have is for presentation purposes only. I would want to hook the error checks to an actual server env.
