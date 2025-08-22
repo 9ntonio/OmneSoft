@@ -138,6 +138,228 @@ This will:
 - `npm run build-css` - Build CSS in watch mode
 - `npm run build-css-prod` - Build CSS for production
 
+## AG Grid + Blazor Integration
+
+### JavaScript Interop Approach
+
+This application uses **IJSRuntime with Custom JavaScript Functions** for AG Grid integration. This is the recommended approach for complex JavaScript library integrations in Blazor.
+
+#### Why This Approach:
+
+- **Full Control** - Complete control over AG Grid initialization and lifecycle
+- **Performance** - Direct JavaScript calls without additional abstraction layers
+- **Flexibility** - Can expose any AG Grid feature as needed
+- **Maintainability** - Clear separation between C# and JavaScript concerns
+
+#### Alternative Options Not Used:
+
+- ❌ **JSImport/JSExport** (newer .NET 7+ approach) - More complex setup
+- ❌ **Direct DOM manipulation** - Limited functionality, harder to maintain
+- ❌ **Third-party wrappers** - Less control, potential version conflicts
+
+### Integration Architecture
+
+#### 1. **JavaScript Interop Layer** (`wwwroot/js/ag-grid-interop.js`)
+
+- Creates a bridge between Blazor C# and AG Grid JavaScript
+- Manages grid instances in a Map for multiple grids
+- Handles grid lifecycle: create, update, destroy
+- Provides callbacks for row clicks and selection changes
+- Uses the modern AG Grid v34+ API (`agGrid.createGrid()`)
+
+#### 2. **Blazor Component** (`Components/UI/AgGrid.razor`)
+
+- Wraps the JavaScript interop in a reusable Blazor component
+- Provides strongly-typed parameters for configuration
+- Handles component lifecycle and cleanup
+- Supports event callbacks for row interactions
+- Uses `DotNetObjectReference` for JavaScript-to-C# callbacks
+
+#### 3. **Dependencies** (`wwwroot/index.html`)
+
+- AG Grid Community v34.1.2 from CDN
+- Quartz theme CSS for modern styling
+- Custom interop JavaScript
+
+### How to Use AG Grid Integration
+
+#### Basic Usage
+
+```razor
+<AgGrid ContainerId="my-grid"
+        Height="400px"
+        Width="100%"
+        RowData="myData"
+        ColumnDefs="myColumns" />
+```
+
+#### With Event Handling
+
+```razor
+<AgGrid @ref="gridRef"
+        ContainerId="employee-grid"
+        RowData="employees"
+        ColumnDefs="columnDefs"
+        EnableSelection="true"
+        SelectionMode="single"
+        OnRowClicked="HandleRowClick"
+        OnSelectionChanged="HandleSelectionChange" />
+
+@code {
+    private AgGrid? gridRef;
+    private object[]? employees;
+    private object[] columnDefs = new object[]
+    {
+        new { field = "name", headerName = "Name", sortable = true },
+        new { field = "email", headerName = "Email", filter = true },
+        new { field = "department", headerName = "Department" }
+    };
+
+    private void HandleRowClick(object rowData)
+    {
+        Console.WriteLine($"Row clicked: {rowData}");
+    }
+
+    private void HandleSelectionChange(object[] selectedRows)
+    {
+        Console.WriteLine($"Selected {selectedRows.Length} rows");
+    }
+}
+```
+
+#### Programmatic Grid Control
+
+```razor
+@code {
+    private AgGrid? gridRef;
+
+    private async Task UpdateData()
+    {
+        var newData = GetNewData();
+        await gridRef!.UpdateRowData(newData);
+    }
+
+    private async Task GetSelected()
+    {
+        var selected = await gridRef!.GetSelectedRows();
+        // Process selected rows
+    }
+
+    private async Task ResizeGrid()
+    {
+        await gridRef!.SizeToFit();
+        // or
+        await gridRef!.AutoSizeAllColumns();
+    }
+}
+```
+
+### JS Interop Implementation Details
+
+#### JavaScript Side (`ag-grid-interop.js`)
+
+```javascript
+window.agGridInterop = {
+  grids: new Map(), // Manages multiple grid instances
+
+  createGrid: function (containerId, gridOptions, dotNetRef) {
+    // Creates grid with .NET callbacks
+    const gridApi = agGrid.createGrid(container, gridOptions);
+    this.grids.set(containerId, gridApi);
+    return true;
+  },
+
+  setRowData: function (containerId, rowData) {
+    // Updates grid data
+    const gridApi = this.grids.get(containerId);
+    gridApi.setGridOption('rowData', rowData);
+  },
+  // ... other methods
+};
+```
+
+#### C# Side (AgGrid.razor)
+
+```csharp
+@inject IJSRuntime JSRuntime
+
+@code {
+    private DotNetObjectReference<AgGrid>? dotNetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            dotNetRef = DotNetObjectReference.Create(this);
+
+            // Call JavaScript function
+            await JSRuntime.InvokeAsync<bool>(
+                "agGridInterop.createGrid",
+                ContainerId,
+                gridOptions,
+                dotNetRef);
+        }
+    }
+
+    // JavaScript can call this method
+    [JSInvokable]
+    public async Task HandleRowClicked(object rowData)
+    {
+        await OnRowClicked.InvokeAsync(rowData);
+    }
+}
+```
+
+### Key Integration Patterns
+
+#### 1. Bidirectional Communication
+
+- **C# → JS**: `JSRuntime.InvokeAsync()` calls JavaScript functions
+- **JS → C#**: `dotNetRef.invokeMethodAsync()` calls C# methods marked with `[JSInvokable]`
+
+#### 2. Object Reference Management
+
+```csharp
+// Create reference for JavaScript callbacks
+dotNetRef = DotNetObjectReference.Create(this);
+
+// Always dispose to prevent memory leaks
+public async ValueTask DisposeAsync()
+{
+    dotNetRef?.Dispose();
+}
+```
+
+#### 3. Grid Instance Management
+
+```javascript
+// JavaScript manages multiple grid instances
+grids: new Map(),
+
+createGrid: function (containerId, gridOptions, dotNetRef) {
+    const gridApi = agGrid.createGrid(container, gridOptions);
+    this.grids.set(containerId, gridApi); // Store by container ID
+}
+```
+
+### Integration Features
+
+✅ **Modern AG Grid API** - Uses v34+ with proper `rowSelection` syntax  
+✅ **Event Handling** - Row clicks and selection changes  
+✅ **Data Management** - Dynamic row data updates  
+✅ **Responsive Design** - Auto-sizing and fit-to-container  
+✅ **Memory Management** - Proper disposal and cleanup  
+✅ **Error Handling** - Try-catch blocks and logging  
+✅ **Loading States** - User feedback during operations
+
+### Usage Best Practices
+
+1. **Always use `@ref`** to get component reference for programmatic control
+2. **Handle disposal** - Component implements `IAsyncDisposable`
+3. **Unique ContainerIds** - Each grid needs a unique container ID
+4. **Error handling** - JavaScript functions include try-catch blocks
+5. **Async patterns** - All JS interop calls are async
+
 ## Features Overview
 
 ### Counter Demo (`/`)
