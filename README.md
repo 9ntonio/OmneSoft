@@ -1,11 +1,11 @@
 # OmneSoft
 
-A modern Blazor WebAssembly application built with .NET 8, featuring interactive components and advanced data grid functionality with comprehensive state management.
+A modern Blazor WebAssembly application built with .NET 8, featuring comprehensive user management capabilities with advanced data grid functionality and centralized state management.
 
 ## Features
 
-- **Interactive Counter Demo**: Blazor component with state management and JSInterop integration
-- **Advanced User Management Grid**: Specialized UsersGrid component with comprehensive error handling, data loading, and state integration
+- **Comprehensive User Management**: Full-featured user management interface with interactive data grid, selection controls, and real-time status updates
+- **Advanced UsersGrid Component**: Production-ready grid component with comprehensive error handling, data loading, retry mechanisms, and state integration
 - **AG Grid Integration**: Advanced data grid with sorting, filtering, selection capabilities, and modern v34+ API
 - **User Management Data**: Comprehensive user dataset with 40 superhero-themed records including roles, licenses, and status tracking
 - **Production-Ready Error Handling**: Comprehensive HTTP error scenarios with user-friendly messages and retry mechanisms
@@ -309,7 +309,7 @@ The application uses **Blazor WebAssembly** instead of Blazor Server for several
 │   ├── Layout/          # Layout components
 │   └── UI/              # Reusable UI components (Button, AgGrid, UsersGrid)
 ├── Pages/
-│   ├── Home.razor       # Counter demo page
+│   ├── Home.razor       # Main users management interface with comprehensive controls
 │   └── GridDemo.razor   # AG Grid demonstration with interactive controls and accessibility features
 ├── Services/            # Application services
 │   ├── AppStateService.cs       # Centralized state management implementation
@@ -387,6 +387,15 @@ This will:
 - Start the Blazor WebAssembly development server
 - Open the application at `https://localhost:5001`
 
+### Application Navigation
+
+The application provides two main interfaces:
+
+- **`/` (Home)**: Primary user management interface with full functionality
+- **`/grid-demo`**: Identical grid demonstration page for testing and development
+
+Both pages feature the same comprehensive user management capabilities, including data loading, error handling, selection management, and error simulation testing.
+
 ### Available Scripts
 
 - `npm run dev` - Start development server
@@ -397,6 +406,44 @@ This will:
 - `npm run format` - Format code with Prettier
 - `npm run build-css` - Build CSS in watch mode
 - `npm run build-css-prod` - Build CSS for production
+
+## Application Overview
+
+### Main User Management Interface (Home Page)
+
+The application's primary interface (`/`) provides a comprehensive user management system featuring:
+
+#### Core Functionality
+
+- **Real-time User Data Grid**: Interactive AG Grid displaying 40 superhero-themed user records with sorting, filtering, and selection capabilities
+- **Data Refresh Controls**: Manual refresh functionality with loading states and progress indicators
+- **User Selection Management**: Single-row selection with detailed row information display
+- **Error Simulation Testing**: Configurable error simulation (50% chance) for comprehensive development testing of error handling scenarios
+
+#### User Interface Features
+
+- **Responsive Controls**: Refresh button with loading states and animated spinners
+- **Selection Feedback**: Real-time display of selected user information in JSON format
+- **Status Messages**: Contextual success, error, and loading messages with auto-dismiss functionality
+- **Error Simulation Toggle**: Interactive toggle switch to enable/disable error simulation for testing
+
+#### Data Management
+
+- **Automatic Data Loading**: Users data automatically loads from `data/users.json` on page initialization
+- **Comprehensive Error Handling**: Handles network failures, timeouts, HTTP errors (404, 401, 500), and JSON parsing errors
+- **Retry Mechanisms**: Built-in retry functionality for failed data loading operations
+- **Loading State Management**: Dual loading state approach (component-specific and global coordination)
+
+#### User Experience Enhancements
+
+- **Visual Feedback**: Animated loading indicators, contextual icons, and color-coded status messages
+- **Accessibility**: Proper focus management, ARIA attributes, and keyboard navigation support
+- **Responsive Design**: Mobile-friendly layout with flexible controls and proper spacing
+- **State Persistence**: Integration with AppStateService for global state coordination
+
+### Grid Demo Page
+
+The `/grid-demo` page provides an identical interface to the home page, serving as a demonstration and testing environment for the UsersGrid component functionality.
 
 ## AG Grid + Blazor Integration
 
@@ -445,18 +492,76 @@ This application uses **IJSRuntime with Custom JavaScript Functions** for AG Gri
 
 ### How to Use AG Grid Integration
 
-#### UsersGrid Component (Recommended for User Management)
+#### UsersGrid Component (Primary User Management Interface)
 
-The `UsersGrid` component is a specialized, production-ready grid specifically designed for user management with built-in error handling, loading states, data fetching, **centralized state management integration via AppStateService**, and **accessibility compliance**.
+The `UsersGrid` component is the core of the application's user management functionality. It's a production-ready grid specifically designed for user management with built-in error handling, loading states, data fetching, **centralized state management integration via AppStateService**, and **accessibility compliance**.
+
+**Main Application Usage (Home Page):**
 
 ```razor
+@page "/"
 @using OmneSoft.Services
 @inject IAppStateService AppState
 
-<!-- Simple usage with default settings -->
-<UsersGrid />
+<UsersGrid @ref="usersGrid"
+           ContainerId="users-grid"
+           Height="500px"
+           Width="100%"
+           EnableSelection="true"
+           SelectionMode="single"
+           OnRowClicked="OnRowClicked"
+           OnSelectionChanged="OnSelectionChanged"
+           DataUrl="data/users.json"
+           SimulateErrors="@simulateErrors" />
 
-<!-- Customized usage with state integration -->
+@code {
+    private UsersGrid? usersGrid;
+    private bool simulateErrors = true;
+
+    private void OnRowClicked(object rowData)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(rowData);
+        selectedRowInfo = $"Row clicked: {json}";
+        StateHasChanged();
+    }
+
+    private void OnSelectionChanged(object[] selectedRows)
+    {
+        if (selectedRows.Length > 0)
+        {
+            var json = System.Text.Json.JsonSerializer.Serialize(selectedRows[0]);
+            selectedRowInfo = $"Row selected: {json}";
+        }
+        else
+        {
+            selectedRowInfo = "No rows selected";
+        }
+        StateHasChanged();
+    }
+
+    private async Task RefreshData()
+    {
+        if (usersGrid != null)
+        {
+            await usersGrid.RefreshData();
+        }
+    }
+
+    private async Task GetSelectedUsers()
+    {
+        if (usersGrid != null)
+        {
+            var selectedRows = await usersGrid.GetSelectedRows();
+            // Process selected users...
+        }
+    }
+}
+```
+
+**Custom Implementation:**
+
+```razor
+<!-- Customized usage with different settings -->
 <UsersGrid ContainerId="my-users-grid"
            Height="600px"
            Width="100%"
@@ -466,30 +571,20 @@ The `UsersGrid` component is a specialized, production-ready grid specifically d
            OnRowClicked="HandleUserClick"
            OnSelectionChanged="HandleSelectionChange"
            SimulateErrors="false" />
-
-@code {
-    private void HandleUserClick(object userData)
-    {
-        // Handle user row click
-        Console.WriteLine($"User clicked: {userData}");
-    }
-
-    private void HandleSelectionChange(object[] selectedUsers)
-    {
-        // Handle selection changes
-        Console.WriteLine($"Selected {selectedUsers.Length} users");
-
-        // Update global state if needed
-        AppState.NotifyStateChanged();
-    }
-}
 ```
 
 #### UsersGrid Features
 
+**Data Management:**
+
 - **Automatic data loading** from JSON endpoints (default: `data/users.json`)
 - **Comprehensive error handling** with user-friendly error messages and visual error states
 - **Built-in retry functionality** for failed requests with loading state management
+- **Network resilience** handling 404, 401, 500, timeout, and connection error scenarios
+- **Error simulation testing** - Configurable 50% random error generation for comprehensive development testing
+
+**User Interface:**
+
 - **Dual loading state management** with component-specific and global loading coordination
 - **Enhanced loading indicators** with animated spinners, contextual messages, and dedicated grid placeholders during initialization
 - **Improved loading UX** with dedicated grid placeholders instead of opacity effects for better visual feedback
@@ -498,8 +593,9 @@ The `UsersGrid` component is a specialized, production-ready grid specifically d
 - **Status color coding** (Active=green, Inactive=orange, Suspended=red) with inline styling
 - **Date formatting** for last active timestamps with locale-aware display
 - **Role display** with comma-separated values and proper array handling
-- **Network resilience** handling 404, 401, 500, timeout, and connection error scenarios
-- **Error simulation testing** - Configurable 50% random error generation for comprehensive development testing
+
+**Technical Implementation:**
+
 - **AppStateService integration** - Uses centralized state management for global loading coordination
 - **Service injection** - Built-in dependency injection for HttpClient and IAppStateService
 - **Optimized lifecycle management** - Synchronous initialization for subscriptions, async for operations
@@ -507,6 +603,18 @@ The `UsersGrid` component is a specialized, production-ready grid specifically d
 - **Memory leak prevention** - Comprehensive cleanup of subscriptions, JS interop, and .NET object references
 - **Resource management** - Proper disposal of grid instances and DotNetObjectReference objects
 - **Accessibility compliance** - Proper focus management, semantic HTML, ARIA attributes, WCAG guidelines adherence, and enhanced ARIA structure handling for empty grid states
+
+**User Data Schema:**
+The application manages users with the following data structure:
+
+- **ID**: Unique user identifier (e.g., "u-1001")
+- **Full Name**: User's complete name
+- **Email**: Contact email address
+- **Roles**: Array of user roles (manager, admin, field, analyst, etc.)
+- **License**: License type (Enterprise, Field Level, Standard)
+- **Status**: Current status (Active, Inactive, Suspended)
+- **Last Active**: Timestamp of last activity
+- **Invited By**: Name of the user who invited this user
 
 #### Generic AgGrid Component
 
@@ -947,12 +1055,16 @@ The application includes a comprehensive user dataset (`wwwroot/data/users.json`
 
 ## Features Overview
 
-### Counter Demo (`/`)
+### User Management Interface (`/`)
 
-- Interactive counter with increment/reset functionality
-- JSInterop demonstration with browser alerts
-- Loading states and user feedback
-- Modern card-based UI design
+- **Primary application interface** with comprehensive user management capabilities
+- **Interactive data grid** displaying 40 superhero-themed user records
+- **Real-time data loading** with automatic initialization and manual refresh controls
+- **User selection management** with single-row selection and detailed feedback
+- **Error simulation testing** with configurable 50% random error generation
+- **Comprehensive error handling** with user-friendly messages and retry mechanisms
+- **Status message system** with contextual icons and auto-dismiss functionality
+- **Responsive controls** with loading states and animated indicators
 
 ### Grid Demo (`/grid-demo`)
 

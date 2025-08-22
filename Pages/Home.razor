@@ -3,94 +3,208 @@
 @inject IAppStateService AppState
 @namespace OmneSoft.Pages
 
-<PageTitle>Home - OmneSoft</PageTitle>
+<PageTitle>Users - OmneSoft</PageTitle>
 
-<div class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-[calc(100vh-200px)] flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
-        <div class="text-center mb-8">
-            <h2 class="text-4xl font-bold text-gray-800 mb-2">Counter Demo</h2>
-            <p class="text-gray-600">Blazor WebAssembly with Modern Components</p>
-        </div>
+<div class="container mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6" tabindex="-1">Users Management</h1>
 
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-24 h-24 bg-indigo-100 rounded-full mb-4">
-                <span class="text-3xl font-bold text-indigo-600">@currentCount</span>
-            </div>
-            <p class="text-lg text-gray-700">Current count: <span class="font-semibold text-indigo-600">@currentCount</span></p>
-        </div>
+    <div class="mb-4 space-x-2 flex flex-wrap items-center gap-2">
+        <button @ref="refreshButton"
+                @onclick="RefreshData"
+                disabled="@isRefreshing"
+                class="@GetRefreshButtonClass() font-bold py-2 px-4 rounded transition-colors">
+            @if (isRefreshing)
+            {
+                <span class="inline-flex items-center">
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Refreshing...
+                </span>
+            }
+            else
+            {
+                <span class="inline-flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh Users Data
+                </span>
+            }
+        </button>
 
-        <div class="space-y-4">
-            <Button OnClick="IncrementCount"
-                    Variant="Button.ButtonVariant.Primary"
-                    class="w-full">
-                Click to Increment
-            </Button>
+        <button @onclick="GetSelectedUsers"
+                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors">
+            <span class="inline-flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Get Selected Users
+            </span>
+        </button>
 
-            <Button OnClick="ResetCount"
-                    Variant="Button.ButtonVariant.Secondary"
-                    class="w-full">
-                Reset Counter
-            </Button>
-
-            <Button OnClick="ShowAlert"
-                    Variant="Button.ButtonVariant.Success"
-                    IsLoading="@isJSInteropLoading"
-                    class="w-full">
-                Test JSInterop
-            </Button>
-        </div>
-
-        <div class="mt-6 text-center">
-            <p class="text-sm text-gray-500">✅ Blazor WebAssembly + .NET 8</p>
-            <p class="text-xs text-gray-400 mt-2">@lastAction</p>
-        </div>
-
-        <div class="mt-6 pt-6 border-t border-gray-200">
-            <a href="/grid-demo" class="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded transition-colors">
-                🔗 View AG Grid Demo
-            </a>
+        <div class="flex items-center space-x-2 ml-4">
+            <label class="flex items-center cursor-pointer">
+                <input type="checkbox" @bind="simulateErrors" class="sr-only">
+                <div class="relative">
+                    <div class="@(simulateErrors ? "bg-blue-600" : "bg-gray-300") w-10 h-6 rounded-full shadow-inner transition-colors"></div>
+                    <div class="@(simulateErrors ? "translate-x-4" : "translate-x-0") absolute w-4 h-4 bg-white rounded-full shadow inset-y-1 left-1 transition-transform"></div>
+                </div>
+                <span class="ml-2 text-sm font-medium text-gray-700">
+                    Simulate Errors (50% chance)
+                </span>
+            </label>
         </div>
     </div>
+
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="mb-4 p-4 @GetStatusMessageClass() border rounded transition-all duration-300">
+            <div class="flex items-center">
+                @if (statusMessage.Contains("✅"))
+                {
+                    <svg class="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                }
+                else if (statusMessage.Contains("🔄"))
+                {
+                    <svg class="animate-spin w-5 h-5 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                }
+                <strong>@statusMessage</strong>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(selectedRowInfo))
+    {
+        <div class="mb-4 p-4 bg-blue-100 border border-blue-300 rounded">
+            <strong>Selected Row:</strong> @selectedRowInfo
+        </div>
+    }
+
+    <UsersGrid @ref="usersGrid"
+               ContainerId="users-grid"
+               Height="500px"
+               Width="100%"
+               EnableSelection="true"
+               SelectionMode="single"
+               OnRowClicked="OnRowClicked"
+               OnSelectionChanged="OnSelectionChanged"
+               DataUrl="data/users.json"
+               SimulateErrors="@simulateErrors" />
 </div>
 
 @code {
-    private int currentCount = 0;
-    private string lastAction = "Ready";
-    private bool isJSInteropLoading = false;
+    private UsersGrid? usersGrid;
+    private ElementReference refreshButton;
+    private string selectedRowInfo = string.Empty;
+    private string statusMessage = string.Empty;
+    private bool isRefreshing = false;
+    private bool simulateErrors = true;
 
     protected override void OnInitialized()
     {
-        lastAction = $"Initialized at {DateTime.Now:HH:mm:ss}";
+        statusMessage = "Users data will be automatically loaded from the server";
     }
 
-    private void IncrementCount()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        currentCount++;
-        lastAction = $"Incremented to {currentCount} at {DateTime.Now:HH:mm:ss}";
+        if (firstRender)
+        {
+            await refreshButton.FocusAsync();
+        }
     }
 
-    private void ResetCount()
+    private async Task RefreshData()
     {
-        currentCount = 0;
-        lastAction = $"Reset to 0 at {DateTime.Now:HH:mm:ss}";
-    }
-
-    private async Task ShowAlert()
-    {
-        isJSInteropLoading = true;
-        AppState.SetLoading(true);
+        isRefreshing = true;
+        statusMessage = "🔄 Refreshing users data from server...";
+        StateHasChanged();
 
         try
         {
-            // Simulate some async work
-            await Task.Delay(500);
-            await JSRuntime.InvokeVoidAsync("alert", $"Current count is: {currentCount}");
-            lastAction = $"JSInterop called at {DateTime.Now:HH:mm:ss}";
+            if (usersGrid != null)
+            {
+                await usersGrid.RefreshData();
+                statusMessage = "✅ Users data refreshed successfully!";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"❌ Error refreshing data: {ex.Message}";
         }
         finally
         {
-            isJSInteropLoading = false;
-            AppState.SetLoading(false);
+            isRefreshing = false;
+            StateHasChanged();
         }
+    }
+
+    private async Task GetSelectedUsers()
+    {
+        try
+        {
+            if (usersGrid != null)
+            {
+                var selectedRows = await usersGrid.GetSelectedRows();
+                if (selectedRows.Length > 0)
+                {
+                    statusMessage = $"✅ Retrieved {selectedRows.Length} selected user(s)";
+                }
+                else
+                {
+                    statusMessage = "ℹ️ No users are currently selected";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"❌ Error getting selected users: {ex.Message}";
+        }
+    }
+
+    private void OnRowClicked(object rowData)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(rowData);
+        selectedRowInfo = $"Row clicked: {json}";
+        StateHasChanged();
+    }
+
+    private void OnSelectionChanged(object[] selectedRows)
+    {
+        if (selectedRows.Length > 0)
+        {
+            var json = System.Text.Json.JsonSerializer.Serialize(selectedRows[0]);
+            selectedRowInfo = $"Row selected: {json}";
+        }
+        else
+        {
+            selectedRowInfo = "No rows selected";
+        }
+        StateHasChanged();
+    }
+
+    private string GetRefreshButtonClass()
+    {
+        return isRefreshing
+            ? "bg-blue-400 cursor-not-allowed text-white"
+            : "bg-blue-500 hover:bg-blue-700 text-white";
+    }
+
+    private string GetStatusMessageClass()
+    {
+        if (statusMessage.Contains("✅"))
+            return "bg-green-100 border-green-300 text-green-800";
+        else if (statusMessage.Contains("❌"))
+            return "bg-red-100 border-red-300 text-red-800";
+        else if (statusMessage.Contains("🔄"))
+            return "bg-blue-100 border-blue-300 text-blue-800";
+        else
+            return "bg-gray-100 border-gray-300 text-gray-800";
     }
 }
