@@ -5,7 +5,7 @@ A modern Blazor WebAssembly application built with .NET 8, featuring comprehensi
 ## Features
 
 - **Professional User Interface**: Clean, modern layout with branded header, optimized content areas, and responsive design
-- **Advanced Data Grid**: AG Grid v33.3.2 integration with sorting, filtering, selection, and intelligent value formatters
+- **Advanced Data Grid**: AG Grid v33.3.2 integration with sorting, filtering, pagination, global search, and intelligent value formatters
 - **Comprehensive Error Handling**: Production-ready error scenarios with user-friendly messages, retry mechanisms, and error simulation testing
 - **Intelligent State Management**: Enhanced AppStateService with reactive patterns, smart loading coordination, and component awareness
 - **Modern UI Components**: Custom Button and UsersGrid components with Tailwind CSS styling and accessibility features
@@ -139,7 +139,7 @@ Versatile button with variants (Primary, Secondary, Success, Danger), sizes, loa
 
 ### UsersGrid Component
 
-Advanced data grid with AG Grid v33.3.2 integration featuring:
+Advanced data grid with AG Grid v33.3.2 integration featuring comprehensive data management capabilities:
 
 **Parameters:**
 
@@ -153,11 +153,15 @@ Advanced data grid with AG Grid v33.3.2 integration featuring:
 
 **Key Features:**
 
-- Intelligent error simulation with lifecycle-aware parameter detection
-- Automatic grid state reset during refresh operations
-- WCAG-compliant accessibility with ARIA attributes
-- Fixed-height strategy to prevent AG Grid v33 rendering issues
-- Loading operations with visual feedback
+- **Advanced Data Management**: Pagination with configurable page sizes (10, 20, 50, 100 rows)
+- **Global Search**: Quick filter functionality for searching across all columns
+- **Column Filtering**: Individual column filters with floating filter inputs below headers
+- **Flexible Layout**: Responsive columns with flex sizing for optimal space utilization
+- **Intelligent Error Simulation**: Lifecycle-aware parameter detection with automatic state management
+- **Automatic Grid State Reset**: Clean state transitions during refresh operations
+- **WCAG-Compliant Accessibility**: Full ARIA attributes and keyboard navigation support
+- **Fixed-Height Strategy**: Prevents AG Grid v33 rendering issues with reliable display
+- **Professional UI**: Loading states with visual feedback and error recovery mechanisms
 
 #### Loading State Management
 
@@ -377,7 +381,7 @@ The OmneSoft application is a fully functional Blazor WebAssembly project with t
 ### Core Features ✅
 
 - **Professional User Management Interface**: Complete home page with branded header, data grid, and controls
-- **AG Grid Integration**: Stable v33.3.2 implementation with Quartz theme, fixed-height strategy, and optimized CSS container classes for reliable rendering
+- **Advanced AG Grid Integration**: Stable v33.3.2 implementation with Quartz theme, pagination, global search, column filtering, and responsive flex columns
 - **AG Grid v33 Height Fix**: Automatic percentage-to-fixed height conversion to prevent Community Edition rendering issues
 - **Error Simulation System**: Built-in error testing with 5 different error scenarios (50% chance when enabled)
 - **Comprehensive Error Handling**: Network errors, timeouts, JSON parsing, HTTP status codes, and unexpected errors
@@ -386,6 +390,7 @@ The OmneSoft application is a fully functional Blazor WebAssembly project with t
 - **Loading States**: Dual loading state management (local and global) with animated indicators and cross-component awareness
 - **Refresh Functionality**: Complete data refresh with grid state reset and proper resource cleanup
 - **JavaScript Interop**: Robust AG Grid integration with lifecycle management and event handling
+- **Enhanced Data Management**: Comprehensive pagination (10/20/50/100 rows), global search functionality, individual column filters, and responsive flex-based column layout
 - **Responsive Design**: Professional layout with viewport-based CSS calculations, dedicated grid container classes, and Tailwind CSS styling
 
 ### Technical Implementation ✅
@@ -456,7 +461,7 @@ The project is ready for development, testing, and production deployment with al
 
 The application opens to the **Users Management** interface featuring:
 
-- **Data Grid**: Displays user information with sorting, filtering, and selection capabilities
+- **Data Grid**: Displays user information with advanced sorting, filtering, pagination, global search, and selection capabilities
 - **Refresh Button**: Reloads data and resets grid state
 - **Error Simulation Toggle**: Enables/disables error simulation for testing (50% chance when enabled)
 - **Professional Layout**: Full-height responsive design with branded header and footer
@@ -477,13 +482,48 @@ Each error type displays appropriate user feedback with retry options.
 
 #### Grid Features
 
-The UsersGrid component provides:
+The UsersGrid component provides comprehensive data management capabilities:
 
-- **Sorting**: Click column headers to sort data
-- **Filtering**: Use column filters for data search
-- **Selection**: Single-row selection with event callbacks
-- **Responsive Design**: Automatically adjusts to container size
-- **Professional Styling**: Modern Quartz theme with consistent appearance
+- **Advanced Sorting**: Click column headers to sort data with multi-column support
+- **Dual Filtering System**:
+  - **Global Search**: Quick filter searches across all columns simultaneously
+  - **Column Filters**: Individual column filters with floating filter inputs below headers
+- **Intelligent Pagination**:
+  - Configurable page sizes (10, 20, 50, 100 rows per page)
+  - Navigation controls with page size selector
+  - Automatic page size management
+- **Flexible Column Layout**: Responsive columns with flex sizing that automatically adjust to container width
+- **Selection Management**: Single-row selection with event callbacks and keyboard navigation
+- **Responsive Design**: Automatically adapts to container size with optimal space utilization
+- **Professional Styling**: Modern Quartz theme with consistent appearance and accessibility compliance
+
+#### Data Management Features
+
+The enhanced UsersGrid now provides powerful data management capabilities:
+
+**Using Pagination:**
+
+- Navigate through data using the pagination controls at the bottom of the grid
+- Change page size using the dropdown selector (10, 20, 50, or 100 rows per page)
+- Default page size is 20 rows for optimal performance and usability
+
+**Using Global Search:**
+
+- Use the quick filter to search across all columns simultaneously
+- Type in the search box to filter data in real-time
+- Search works across all visible columns and data types
+
+**Using Column Filters:**
+
+- Individual column filters appear below each column header
+- Click on the filter icon in any column to access filtering options
+- Combine column filters with global search for precise data discovery
+
+**Column Management:**
+
+- Columns automatically resize to fit available space using flex layout
+- Drag column borders to manually resize columns
+- All columns maintain minimum width for readability
 
 ## Development
 
@@ -619,7 +659,70 @@ The application uses **Blazor WebAssembly** instead of Blazor Server for several
 
 ## Recent Updates
 
-### Latest Update: AG Grid API Method Correction (Current)
+### Latest Update: Enhanced Data Grid Functionality (Current)
+
+**Advanced Data Management Features**: The UsersGrid component has been significantly enhanced with comprehensive data management capabilities:
+
+**New Features Added:**
+
+- **Intelligent Pagination System**:
+  - Built-in pagination with 20 rows per page default
+  - Configurable page sizes: 10, 20, 50, 100 rows per page
+  - Page size selector dropdown for user customization
+  - Automatic page size management without manual configuration
+
+- **Global Search Functionality**:
+  - Quick filter that searches across all visible columns simultaneously
+  - Real-time search results as you type
+  - Integrated search box in the grid interface
+
+- **Enhanced Column Filtering**:
+  - Individual column filters for precise data filtering
+  - Floating filter inputs displayed below column headers
+  - Combined with global search for powerful data discovery
+
+- **Responsive Column Layout**:
+  - Flex-based column sizing (`flex = 1`) for optimal space utilization
+  - Columns automatically adjust to available container width
+  - Maintains minimum width requirements while maximizing readability
+
+**Implementation Details:**
+
+```javascript
+// Enhanced grid configuration
+gridOptions = {
+  // Pagination
+  pagination: true,
+  paginationPageSize: 20,
+  paginationPageSizeSelector: [10, 20, 50, 100],
+
+  // Global search
+  quickFilterText: '',
+
+  // Column filtering
+  enableFilter: true,
+  floatingFilter: true,
+
+  // Responsive columns
+  defaultColDef: {
+    flex: 1,
+    resizable: true,
+    sortable: true,
+    filter: true,
+    minWidth: 100,
+  },
+};
+```
+
+**Benefits:**
+
+- **Enhanced User Experience**: Users can now efficiently navigate large datasets with pagination and search
+- **Improved Data Discovery**: Combined global search and column filtering enable precise data location
+- **Professional Interface**: Modern data grid features expected in enterprise applications
+- **Optimal Performance**: Pagination reduces DOM load for better performance with large datasets
+- **Responsive Design**: Flexible column layout adapts to different screen sizes and container widths
+
+### Previous Update: AG Grid API Method Correction
 
 **JavaScript Interop API Fix**: The most recent update corrects the AG Grid initialization method in the JavaScript interop layer to use the proper v33.3.2 API:
 

@@ -345,6 +345,119 @@ window.usersInterop = {
     }
   },
 
+  // Set Quick Filter text
+  setQuickFilter: function (containerId, filterText) {
+    try {
+      const gridApi = this.grids.get(containerId);
+      if (gridApi) {
+        gridApi.setGridOption('quickFilterText', filterText || '');
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error setting quick filter:', err);
+      return false;
+    }
+  },
+
+  // Clear all filters (including column filters and quick filter)
+  clearAllFilters: function (containerId) {
+    try {
+      const gridApi = this.grids.get(containerId);
+      if (gridApi) {
+        // Clear quick filter
+        gridApi.setGridOption('quickFilterText', '');
+
+        // Clear all column filters
+        gridApi.setFilterModel(null);
+
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error clearing all filters:', err);
+      return false;
+    }
+  },
+
+  // Get current filter model
+  getFilterModel: function (containerId) {
+    try {
+      const gridApi = this.grids.get(containerId);
+      if (gridApi) {
+        return gridApi.getFilterModel();
+      }
+      return null;
+    } catch (err) {
+      console.error('Error getting filter model:', err);
+      return null;
+    }
+  },
+
+  // Set filter model
+  setFilterModel: function (containerId, filterModel) {
+    try {
+      const gridApi = this.grids.get(containerId);
+      if (gridApi) {
+        gridApi.setFilterModel(filterModel);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error setting filter model:', err);
+      return false;
+    }
+  },
+
+  // Get pagination info
+  getPaginationInfo: function (containerId) {
+    try {
+      const gridApi = this.grids.get(containerId);
+      if (gridApi) {
+        return {
+          currentPage: gridApi.paginationGetCurrentPage(),
+          totalPages: gridApi.paginationGetTotalPages(),
+          pageSize: gridApi.paginationGetPageSize(),
+          rowCount: gridApi.paginationGetRowCount(),
+        };
+      }
+      return null;
+    } catch (err) {
+      console.error('Error getting pagination info:', err);
+      return null;
+    }
+  },
+
+  // Set pagination page size
+  setPaginationPageSize: function (containerId, pageSize) {
+    try {
+      const gridApi = this.grids.get(containerId);
+      if (gridApi) {
+        gridApi.paginationSetPageSize(pageSize);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error setting pagination page size:', err);
+      return false;
+    }
+  },
+
+  // Go to specific page
+  paginationGoToPage: function (containerId, page) {
+    try {
+      const gridApi = this.grids.get(containerId);
+      if (gridApi) {
+        gridApi.paginationGoToPage(page);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error going to page:', err);
+      return false;
+    }
+  },
+
   // Validate grid state and fix common issues
   validateGrid: function (containerId) {
     try {

@@ -47,6 +47,51 @@ else if (isLoading)
 }
 else
 {
+    <!-- Quick Filter Search Box -->
+    <div class="mb-4 flex items-center gap-4">
+        <div class="flex-1 max-w-md">
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+                <input
+                    type="text"
+                    @bind="quickFilterText"
+                    @oninput="OnQuickFilterChanged"
+                    placeholder="Search all columns..."
+                    class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+                @if (!string.IsNullOrEmpty(quickFilterText))
+                {
+                    <button
+                        @onclick="ClearQuickFilter"
+                        class="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        type="button">
+                        <svg class="h-4 w-4 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- Grid Actions -->
+        <div class="flex items-center gap-2">
+            <button
+                @onclick="ClearAllFilters"
+                class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Clear Filters
+            </button>
+            <button
+                @onclick="AutoSizeColumns"
+                class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Auto Size
+            </button>
+        </div>
+    </div>
+
     <div id="@ContainerId" class="ag-theme-quartz @GetGridContainerClass()" style="@GetGridContainerStyle()"></div>
 }
 
@@ -66,48 +111,73 @@ else
     private bool isLoading = false;
     private ErrorState? errorState = null;
     private object[]? usersData;
+    private string quickFilterText = string.Empty;
 
     private object[] columnDefs = new object[]
     {
         new {
             field = "id",
             headerName = "ID",
-            width = 100
+            width = 100,
+            filter = "agTextColumnFilter",
+            sortable = true,
+            resizable = true
         },
         new {
             field = "fullName",
             headerName = "Full Name",
-            width = 180
+            width = 180,
+            filter = "agTextColumnFilter",
+            sortable = true,
+            resizable = true
         },
         new {
             field = "email",
             headerName = "Email",
-            width = 220
+            width = 220,
+            filter = "agTextColumnFilter",
+            sortable = true,
+            resizable = true
         },
         new {
             field = "roles",
             headerName = "Roles",
-            width = 200
+            width = 200,
+            filter = "agTextColumnFilter",
+            sortable = true,
+            resizable = true
         },
         new {
             field = "license",
             headerName = "License",
-            width = 120
+            width = 120,
+            filter = "agSetColumnFilter",
+            sortable = true,
+            resizable = true
         },
         new {
             field = "status",
             headerName = "Status",
-            width = 100
+            width = 100,
+            filter = "agSetColumnFilter",
+            sortable = true,
+            resizable = true
         },
         new {
             field = "lastActive",
             headerName = "Last Active",
-            width = 150
+            width = 150,
+            filter = "agDateColumnFilter",
+            sortable = true,
+            resizable = true
         },
         new {
             field = "invitedBy",
             headerName = "Invited By",
-            width = 150
+            width = 150,
+            filter = "agTextColumnFilter",
+            sortable = true,
+            resizable = true
         }
     };
 
@@ -363,8 +433,22 @@ else
                     resizable = true,
                     sortable = true,
                     filter = true,
-                    minWidth = 100
+                    minWidth = 100,
+                    flex = 1 // Allow columns to grow/shrink
                 },
+                // Quick Filter (Global Search)
+                quickFilterText = "",
+
+                // Pagination Configuration
+                pagination = true,
+                paginationPageSize = 20,
+                paginationPageSizeSelector = new int[] { 10, 20, 50, 100 },
+                paginationAutoPageSize = false,
+
+                // Column Filters
+                enableFilter = true,
+                floatingFilter = true, // Show filter inputs below headers
+
                 // v33 Community Edition compatible options
                 suppressLoadingOverlay = false,
                 suppressNoRowsOverlay = false,
@@ -468,6 +552,41 @@ else
         if (isGridInitialized)
         {
             await JSRuntime.InvokeVoidAsync("usersInterop.sizeToFit", ContainerId);
+        }
+    }
+
+    private async Task OnQuickFilterChanged(ChangeEventArgs e)
+    {
+        quickFilterText = e.Value?.ToString() ?? string.Empty;
+        if (isGridInitialized)
+        {
+            await JSRuntime.InvokeVoidAsync("usersInterop.setQuickFilter", ContainerId, quickFilterText);
+        }
+    }
+
+    private async Task ClearQuickFilter()
+    {
+        quickFilterText = string.Empty;
+        if (isGridInitialized)
+        {
+            await JSRuntime.InvokeVoidAsync("usersInterop.setQuickFilter", ContainerId, "");
+        }
+    }
+
+    private async Task ClearAllFilters()
+    {
+        quickFilterText = string.Empty;
+        if (isGridInitialized)
+        {
+            await JSRuntime.InvokeVoidAsync("usersInterop.clearAllFilters", ContainerId);
+        }
+    }
+
+    private async Task AutoSizeColumns()
+    {
+        if (isGridInitialized)
+        {
+            await JSRuntime.InvokeVoidAsync("usersInterop.autoSizeAllColumns", ContainerId);
         }
     }
 
