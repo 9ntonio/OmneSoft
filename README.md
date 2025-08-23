@@ -935,6 +935,7 @@ _Modern user management interface with AG Grid integration, error simulation, an
 - **Actions Column**: I was not able to add a simple dropdown or button to the column in time.
 - **Proper Error Handling**: I would integrate the proper error handling as what I have is for presentation purposes only. I would want to hook the error checks to an actual server env.
 - **Code Optimization**: I would look for patterns and see if I can optimize the code for better performance.
+- **bUnit Tests**: bUnit is a testing library for Blazor Components. With time I would create tests with each component.
 
 ---
 
